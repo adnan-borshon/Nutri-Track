@@ -45,7 +45,10 @@ $messages = [
         <div style="padding: 1rem; border-top: 1px solid #e5e7eb;">
             <div style="display: flex; gap: 0.75rem;">
                 <input type="text" placeholder="Type your message..." class="form-input" style="flex: 1;">
-                <button class="btn btn-primary">📤 Send</button>
+                <button class="btn btn-primary">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;stroke-width:1.5;vertical-align:middle;margin-right:4px;color:#278b63;">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+</svg> Send</button>
             </div>
         </div>
     </div>

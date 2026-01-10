@@ -10,7 +10,9 @@
         <div class="stat-card">
             <div class="stat-header">
                 <div class="stat-label">Total Users</div>
-                <div class="stat-icon">👥</div>
+                <div class="stat-icon">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-users" style="color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0 -3 -3.85" /></svg>
+                </div>
             </div>
             <div class="stat-value">2,847</div>
             <div class="stat-change positive">+12% this month</div>
@@ -19,7 +21,9 @@
         <div class="stat-card">
             <div class="stat-header">
                 <div class="stat-label">Nutritionists</div>
-                <div class="stat-icon">🩺</div>
+                <div class="stat-icon">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-stethoscope" style="color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 4h-1a2 2 0 0 0 -2 2v3.5h0a5.5 5.5 0 0 0 11 0v-3.5a2 2 0 0 0 -2 -2h-1" /><path d="M8 15a6 6 0 1 0 12 0v-3" /><path d="M11 3v2" /><path d="M6 3v2" /><circle cx="20" cy="10" r="2" /></svg>
+                </div>
             </div>
             <div class="stat-value">156</div>
             <div class="stat-change positive">+8% this month</div>
@@ -28,7 +32,9 @@
         <div class="stat-card">
             <div class="stat-header">
                 <div class="stat-label">Active Diet Plans</div>
-                <div class="stat-icon">👨🍳</div>
+                <div class="stat-icon">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chef-hat" style="color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 3c1.918 0 3.52 1.35 3.91 3.151a4 4 0 0 1 2.09 7.723l0 7.126h-12v-7.126a4 4 0 1 1 2.092 -7.723a4.002 4.002 0 0 1 3.908 -3.151z" /><path d="M6.161 17.009l11.839 -.009" /></svg>
+                </div>
             </div>
             <div class="stat-value">1,234</div>
             <div class="stat-change positive">+5% this month</div>
@@ -37,7 +43,9 @@
         <div class="stat-card">
             <div class="stat-header">
                 <div class="stat-label">Daily Active Users</div>
-                <div class="stat-icon">📱</div>
+                <div class="stat-icon">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-device-mobile" style="color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M6 5a2 2 0 0 1 2 -2h8a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-8a2 2 0 0 1 -2 -2v-14z" /><path d="M11 4h2" /><path d="M12 17v.01" /></svg>
+                </div>
             </div>
             <div class="stat-value">892</div>
             <div class="stat-change negative">-3% this month</div>
@@ -49,7 +57,9 @@
             <div class="card-header">
                 <div class="card-header-content">
                     <h3 class="card-title">User Growth</h3>
-                    <div class="chart-icon">📈</div>
+                    <div class="chart-icon">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trending-up" style="color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 17l6 -6l4 4l8 -8" /><path d="M14 7l7 0l0 7" /></svg>
+                    </div>
                 </div>
             </div>
             <div class="card-content">
@@ -97,7 +107,9 @@
             <div class="card-header">
                 <div class="card-header-content">
                     <h3 class="card-title">Weekly Activity</h3>
-                    <div class="chart-icon">📊</div>
+                    <div class="chart-icon">
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-chart-bar" style="color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M3 12m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v6a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M9 8m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v10a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M15 4m0 1a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v14a1 1 0 0 1 -1 1h-4a1 1 0 0 1 -1 -1z" /><path d="M4 20l14 0" /></svg>
+                    </div>
                 </div>
             </div>
             <div class="card-content">

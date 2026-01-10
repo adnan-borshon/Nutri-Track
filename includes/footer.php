@@ -6,9 +6,17 @@
                 <div>
                     <div class="footer-brand">
                         <a href="index.php" class="logo">
-                            <div class="logo-icon">🌿</div>
-                            <span class="logo-text">NutriTrack</span>
-                        </a>
+                    <div style="display:flex; justify-self: center;">
+                    <img style="width:30px;height:30px" src="../assets/images/nutritrak_logo-removebg-preview.png" alt="NutriTrack Logo">
+
+                    </div>
+                    <span class="logo-text"><span style="color:#278b63;">
+
+                        Nutri
+</span>
+                Track
+                </span>
+                </a>
                     </div>
                     <p class="footer-description">
                         Your complete health companion for nutrition tracking, diet planning, and wellness management.

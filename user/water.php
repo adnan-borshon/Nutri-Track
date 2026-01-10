@@ -45,8 +45,15 @@ $weeklyAverage = round(array_sum($weeklyData) / 7);
                 </p>
 
                 <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1.5rem;">
-                    <button class="btn btn-outline" style="width: 3rem; height: 3rem; border-radius: 50%; padding: 0;">➖</button>
-                    <button class="btn btn-primary" style="padding: 0.75rem 2rem;">➕ Add Glass</button>
+                    <button class="btn btn-outline" style="width: 3rem; height: 3rem; border-radius: 50%; padding: 0;">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;stroke-width:1.5;color:#278b63;">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
+</svg>
+                    </button>
+                    <button class="btn btn-primary" style="padding: 0.75rem 2rem;">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;stroke-width:1.5;vertical-align:middle;margin-right:4px;color:#278b63;">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+</svg> Add Glass</button>
                 </div>
 
                 <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
@@ -66,7 +73,11 @@ $weeklyAverage = round(array_sum($weeklyData) / 7);
                 <div class="card-content">
                     <div class="grid grid-3">
                         <div class="stat-card">
-                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">💧</div>
+                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:24px;height:24px;stroke-width:1.5;color:#278b63;">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z" />
+</svg>
+                        </div>
                             <p class="stat-value"><?php echo $glasses; ?></p>
                             <p class="stat-label">Glasses</p>
                         </div>
@@ -85,7 +96,11 @@ $weeklyAverage = round(array_sum($weeklyData) / 7);
             <?php if ($glasses >= $target): ?>
                 <div class="card" style="background: rgba(6, 182, 212, 0.1); border-color: rgba(6, 182, 212, 0.2);">
                     <div class="card-content" style="display: flex; align-items: center; gap: 1rem;">
-                        <div class="card-icon" style="background: rgba(6, 182, 212, 0.2); font-size: 1.5rem;">🏆</div>
+                        <div class="card-icon" style="background: rgba(6, 182, 212, 0.2); font-size: 1.5rem;">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:24px;height:24px;stroke-width:1.5;color:#278b63;">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 0 1 3 3h-15a3 3 0 0 1 3-3m9 0v-3.375c0-.621-.503-1.125-1.125-1.125h-.871M7.5 18.75v-3.375c0-.621.504-1.125 1.125-1.125h.872m5.007 0H9.497m5.007 0a7.454 7.454 0 0 1-.982-3.172M9.497 14.25a7.454 7.454 0 0 0 .981-3.172M15.5 4.323c1.88.799 3.5 2.409 4.5 4.677a.75.75 0 0 1-1.5.5c-.8-1.8-2.1-3.2-3.8-3.9a.75.75 0 0 1 .8-1.277Z" />
+</svg>
+                        </div>
                         <div>
                             <h3 class="card-title">Daily Goal Achieved!</h3>
                             <p class="card-description">Keep up the great hydration habits</p>

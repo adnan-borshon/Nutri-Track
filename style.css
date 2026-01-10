@@ -1,8 +1,10 @@
-/* Modern Layout Utilities */
+
 .space-y-6 > * + * {
     margin-top: 1.5rem;
 }
-
+.stars svg{
+    color: #278b63;
+}
 .space-y-4 > * + * {
     margin-top: 1rem;
 }
@@ -63,7 +65,7 @@
 }
 
 .stat-change.positive {
-    color: #16a34a;
+    color: #278b63;
 }
 
 .stat-change.negative {
@@ -215,7 +217,7 @@
 
 .status-badge.new {
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
     padding: 0.125rem 0.5rem;
     border-radius: 0.25rem;
     font-size: 0.75rem;
@@ -227,7 +229,7 @@
 
 .status-badge.online {
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
     padding: 0.125rem 0.5rem;
     border-radius: 0.25rem;
     font-size: 0.75rem;
@@ -287,7 +289,7 @@
     width: 4rem;
     height: 4rem;
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -304,7 +306,7 @@
 }
 
 .user-card-goal {
-    color: #16a34a;
+    color: #278b63;
     font-size: 0.875rem;
     margin-bottom: 1rem;
 }
@@ -354,7 +356,7 @@
 
 .search-input:focus {
     outline: none;
-    border-color: #16a34a;
+    border-color: #278b63;
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
 }
 
@@ -453,7 +455,7 @@
 
 .chat-input:focus {
     outline: none;
-    border-color: #16a34a;
+    border-color: #278b63;
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
 }
 
@@ -536,7 +538,7 @@
 
 .status-badge.active {
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
 }
 
 .status-badge.pending {
@@ -593,7 +595,7 @@
 .activity-dot {
     width: 0.5rem;
     height: 0.5rem;
-    background: #16a34a;
+    background: #278b63;
     border-radius: 50%;
 }
 
@@ -629,7 +631,7 @@
 
 .activity-badge.plan {
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
 }
 
 .activity-badge.nutritionist {
@@ -658,7 +660,7 @@
     width: 200px;
     height: 200px;
     border-radius: 50%;
-    background: conic-gradient(#16a34a 0deg 162deg, #3b82f6 162deg 252deg, #f59e0b 252deg 306deg, #8b5cf6 306deg 360deg);
+    background: conic-gradient(#278b63 0deg 162deg, #3b82f6 162deg 252deg, #f59e0b 252deg 306deg, #8b5cf6 306deg 360deg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -761,7 +763,7 @@
 }
 
 .metric-trend.positive {
-    color: #16a34a;
+    color: #278b63;
 }
 
 .metric-trend.negative {
@@ -789,7 +791,7 @@
 
 .progress-fill {
     height: 100%;
-    background: #16a34a;
+    background: #278b63;
     border-radius: 9999px;
     transition: width 0.3s ease;
 }
@@ -894,7 +896,7 @@
 }
 
 .cta-description {
-    color: #6b7280;
+    color: #f2efef;
     margin: 0;
 }
 
@@ -920,7 +922,7 @@
 }
 
 .summary-value.positive {
-    color: #16a34a;
+    color: #278b63;
 }
 
 .summary-label {
@@ -1057,7 +1059,7 @@
 
 .food-item-btn:hover {
     background: #f9fafb;
-    border-color: #16a34a;
+    border-color: #278b63;
 }
 
 .food-item-header {
@@ -1143,7 +1145,7 @@
 }
 
 .toggle-switch.active {
-    background: #16a34a;
+    background: #278b63;
 }
 
 .toggle-handle {
@@ -1200,7 +1202,7 @@
     width: 3rem;
     height: 3rem;
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
     border-radius: 0.5rem;
     display: flex;
     align-items: center;
@@ -1319,7 +1321,7 @@ header {
 .logo-icon {
     width: 2.25rem;
     height: 2.25rem;
-    background: #16a34a;
+    background: #278b63;
     color: white;
     border-radius: 0.5rem;
     display: flex;
@@ -1381,7 +1383,7 @@ header {
 }
 
 .btn-primary {
-    background: #16a34a;
+    background: #278b63;
     color: white;
 }
 
@@ -1391,7 +1393,7 @@ header {
 
 .btn-secondary {
     background: white;
-    color: #16a34a;
+    color: #278b63;
 }
 
 .btn-secondary:hover {
@@ -1473,16 +1475,17 @@ header {
 }
 
 .hero-title .highlight {
-    color: #16a34a;
+    color: #278b63;
 }
 
 .hero-description {
     font-size: 1.125rem;
-    color: #6b7280;
+    color: black;
     margin-bottom: 2rem;
     max-width: 32rem;
     margin-left: auto;
     margin-right: auto;
+    
 }
 
 .hero-actions {
@@ -1501,13 +1504,14 @@ header {
     justify-content: center;
     gap: 2rem;
     font-size: 0.875rem;
-    color: #6b7280;
+    color: black;
 }
 
 .hero-feature {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    color: black;
 }
 
 /* Section Styles */
@@ -1532,7 +1536,7 @@ header {
 
 .section-description {
     font-size: 1.125rem;
-    color: #6b7280;
+    color: black;
     max-width: 32rem;
     margin: 0 auto;
 }
@@ -1575,7 +1579,7 @@ header {
     width: 3rem;
     height: 3rem;
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
     border-radius: 0.5rem;
     display: flex;
     align-items: center;
@@ -1586,12 +1590,12 @@ header {
 
 .card-title {
     font-size: 1.125rem;
-    font-weight: 600;
+    font-weight: 800;
     margin-bottom: 0.5rem;
 }
 
 .card-description {
-    color: #6b7280;
+    color: #000000;
 }
 
 /* Feature Cards */
@@ -1614,7 +1618,7 @@ header {
     width: 3.5rem;
     height: 3.5rem;
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
     border-radius: 0.75rem;
     display: flex;
     align-items: center;
@@ -1651,7 +1655,7 @@ header {
     content: '';
     width: 0.375rem;
     height: 0.375rem;
-    background: #16a34a;
+    background: #278b63;
     border-radius: 50%;
 }
 
@@ -1681,7 +1685,7 @@ header {
 .step-number {
     width: 4rem;
     height: 4rem;
-    background: #16a34a;
+    background: #278b63;
     color: white;
     border-radius: 50%;
     display: flex;
@@ -1694,12 +1698,12 @@ header {
 
 .step-title {
     font-size: 1.125rem;
-    font-weight: 600;
+    font-weight: 800;
     margin-bottom: 0.5rem;
 }
 
 .step-description {
-    color: #6b7280;
+    color: #000000;
 }
 
 /* Stats */
@@ -1721,7 +1725,7 @@ header {
 .stat-value {
     font-size: 2.5rem;
     font-weight: bold;
-    color: #16a34a;
+    color: #278b63;
     margin-bottom: 0.5rem;
 }
 
@@ -1747,7 +1751,7 @@ header {
     width: 4rem;
     height: 4rem;
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -1763,7 +1767,7 @@ header {
 
 .team-role {
     font-size: 0.875rem;
-    color: #16a34a;
+    color: #278b63;
     margin-bottom: 0.5rem;
 }
 
@@ -1774,7 +1778,7 @@ header {
 
 /* CTA Section */
 .cta {
-    background: #16a34a;
+    background: #278b63;
     color: white;
     border-radius: 0.5rem;
     padding: 3rem 2rem;
@@ -1789,7 +1793,7 @@ header {
 
 .cta-description {
     font-size: 1.125rem;
-    opacity: 0.9;
+    opacity: 1;
     max-width: 32rem;
     margin: 0 auto 2rem;
 }
@@ -1835,7 +1839,7 @@ header {
 
 .form-input:focus {
     outline: none;
-    border-color: #16a34a;
+    border-color: #278b63;
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
 }
 
@@ -1850,7 +1854,7 @@ header {
 
 .form-textarea:focus {
     outline: none;
-    border-color: #16a34a;
+    border-color: #278b63;
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
 }
 
@@ -2000,7 +2004,7 @@ header {
     width: 2rem;
     height: 2rem;
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -2033,7 +2037,7 @@ header {
     width: 2.5rem;
     height: 2.5rem;
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
     border-radius: 0.5rem;
     display: flex;
     align-items: center;
@@ -2146,7 +2150,7 @@ header {
 }
 
 .auth-footer a {
-    color: #16a34a;
+    color: #278b63;
     text-decoration: none;
 }
 
@@ -2201,11 +2205,11 @@ footer {
 
 .footer-description {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: #000000;
 }
 
 .footer-section h4 {
-    font-weight: 600;
+    font-weight: 700;
     margin-bottom: 1rem;
 }
 
@@ -2218,7 +2222,7 @@ footer {
 
 .footer-links a {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: #000000;
     text-decoration: none;
     transition: color 0.2s;
 }
@@ -2346,7 +2350,7 @@ footer {
 
 .sidebar-nav a.active {
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
 }
 
 .sidebar-footer {
@@ -2387,7 +2391,7 @@ footer {
     width: 2rem;
     height: 2rem;
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -2505,7 +2509,7 @@ footer {
 }
 
 .message.user .message-bubble {
-    background: #16a34a;
+    background: #278b63;
     color: white;
     border-bottom-right-radius: 0.25rem;
 }
@@ -2545,7 +2549,7 @@ footer {
     width: 3rem;
     height: 3rem;
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -2583,7 +2587,7 @@ footer {
 
 .status-badge.confirmed {
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
 }
 
 .status-badge.pending {
@@ -2733,7 +2737,7 @@ footer {
 }
 
 .admin-stat-change.positive {
-    color: #16a34a;
+    color: #278b63;
 }
 
 .admin-stat-change.negative {
@@ -2901,7 +2905,7 @@ footer {
     width: 2.5rem;
     height: 2.5rem;
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -2937,7 +2941,7 @@ footer {
 }
 
 .admin-btn-primary {
-    background: #16a34a;
+    background: #278b63;
     color: white;
 }
 
@@ -3040,7 +3044,7 @@ footer {
 
 .admin-form-input:focus {
     outline: none;
-    border-color: #16a34a;
+    border-color: #278b63;
     box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
 }
 
@@ -3169,7 +3173,7 @@ footer {
 }
 
 .admin-toggle.active {
-    background: #16a34a;
+    background: #278b63;
 }
 
 .admin-toggle-handle {
@@ -3215,7 +3219,7 @@ footer {
 .admin-activity-dot {
     width: 0.5rem;
     height: 0.5rem;
-    background: #16a34a;
+    background: #278b63;
     border-radius: 50%;
 }
 
@@ -3245,7 +3249,7 @@ footer {
     width: 200px;
     height: 200px;
     border-radius: 50%;
-    background: conic-gradient(#16a34a 0deg 162deg, #3b82f6 162deg 252deg, #f59e0b 252deg 306deg, #8b5cf6 306deg 360deg);
+    background: conic-gradient(#278b63 0deg 162deg, #3b82f6 162deg 252deg, #f59e0b 252deg 306deg, #8b5cf6 306deg 360deg);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3335,7 +3339,7 @@ footer {
 .sidebar-nav a:hover,
 .sidebar-nav a.active {
     background: #f3f4f6;
-    color: #16a34a;
+    color: #278b63;
 }
 
 .sidebar-footer {
@@ -3373,7 +3377,7 @@ footer {
 .user-avatar {
     width: 2rem;
     height: 2rem;
-    background: #16a34a;
+    background: #278b63;
     color: white;
     border-radius: 50%;
     display: flex;
@@ -3435,7 +3439,7 @@ footer {
 }
 
 .admin-stat-change.positive {
-    color: #16a34a;
+    color: #278b63;
 }
 
 .admin-stat-change.negative {
@@ -3540,7 +3544,7 @@ footer {
 .admin-activity-dot {
     width: 0.5rem;
     height: 0.5rem;
-    background: #16a34a;
+    background: #278b63;
     border-radius: 50%;
 }
 
@@ -3570,7 +3574,7 @@ footer {
 
 .status-badge.confirmed {
     background: #dcfce7;
-    color: #16a34a;
+    color: #278b63;
 }
 
 .status-badge.pending {
