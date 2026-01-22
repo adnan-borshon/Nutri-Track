@@ -45,8 +45,8 @@ $weeklyAverage = round(array_sum($weeklyData) / 7);
                 </p>
 
                 <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1.5rem;">
-                    <button class="btn btn-outline" style="width: 3rem; height: 3rem; border-radius: 50%; padding: 0;">
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;stroke-width:1.5;color:#278b63;">
+                    <button class="btn btn-outline" style="width: 3rem; height: 3rem; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;">
+<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;stroke-width:3.5;color:#278b63;">
   <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
 </svg>
                     </button>
@@ -73,11 +73,11 @@ $weeklyAverage = round(array_sum($weeklyData) / 7);
                 <div class="card-content">
                     <div class="grid grid-3">
                         <div class="stat-card">
-                            <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">
+                            <!-- <div style="font-size: 1.5rem; margin-bottom: 0.5rem;">
 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:24px;height:24px;stroke-width:1.5;color:#278b63;">
   <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 0 0 4.5 4.5H18a3.75 3.75 0 0 0 1.332-7.257 3 3 0 0 0-3.758-3.848 5.25 5.25 0 0 0-10.233 2.33A4.502 4.502 0 0 0 2.25 15Z" />
 </svg>
-                        </div>
+                        </div> -->
                             <p class="stat-value"><?php echo $glasses; ?></p>
                             <p class="stat-label">Glasses</p>
                         </div>

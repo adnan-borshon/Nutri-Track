@@ -12,6 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NutriTrack - Admin Panel</title>
     <link rel="stylesheet" href="http://localhost/Health%20DIet/style.css">
+    <script src="admin.js" defer></script>
 </head>
 <body>
     <div class="user-layout">
