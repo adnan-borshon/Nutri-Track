@@ -2,17 +2,6 @@
 require_once '../includes/session.php';
 checkAuth('admin');
 $user = getCurrentUser();
-
-function getUserInitials($name) {
-    $words = explode(' ', trim($name));
-    $initials = '';
-    foreach ($words as $word) {
-        if (!empty($word)) {
-            $initials .= strtoupper($word[0]);
-        }
-    }
-    return $initials;
-}
 ?>
 <!DOCTYPE html>
 <html lang="en">

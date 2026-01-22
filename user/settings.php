@@ -12,6 +12,7 @@ include 'header.php';
         <p class="section-description">Manage your account and preferences</p>
     </div>
 
+    <!-- Profile Information and Account Actions - Two Columns -->
     <div class="grid grid-2">
         <div class="card">
             <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb;">
@@ -38,74 +39,182 @@ include 'header.php';
 
         <div class="card">
             <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb;">
-                <h3 class="card-title">Health Goals</h3>
+                <h3 class="card-title">Account Actions</h3>
             </div>
             <div class="card-content">
                 <div class="form">
-                    <div class="form-group">
-                        <label class="form-label">Daily Calorie Goal</label>
-                        <input type="number" value="1800" class="form-input">
+                    <div style="display: flex; flex-direction: column; gap: 1rem;">
+                        <button class="btn btn-outline">Change Password</button>
+                        <button class="btn btn-outline">Export Data</button>
+                        <button class="btn btn-outline" style="color: #ef4444; border-color: #ef4444;">Delete Account</button>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label">Water Goal (glasses)</label>
-                        <input type="number" value="8" class="form-input">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Sleep Goal (hours)</label>
-                        <input type="number" step="0.5" value="8" class="form-input">
-                    </div>
-                    <button class="btn btn-primary" id="saveGoalsBtn">Save Goals</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Health Information - Full Width -->
     <div class="card">
         <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb;">
-            <h3 class="card-title">Notifications</h3>
+            <h3 class="card-title">Health Information</h3>
         </div>
         <div class="card-content">
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <p class="card-title" style="font-size: 1rem;">Meal Reminders</p>
-                        <p class="card-description">Get reminded to log your meals</p>
+            <div class="form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">Weight (kg)</label>
+                        <input type="number" id="weight" step="0.1" placeholder="70.5" class="form-input">
                     </div>
-                    <input type="checkbox" checked>
-                </div>
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <p class="card-title" style="font-size: 1rem;">Water Reminders</p>
-                        <p class="card-description">Stay hydrated with regular reminders</p>
+                    <div class="form-group">
+                        <label class="form-label">Height (cm)</label>
+                        <input type="number" id="height" placeholder="175" class="form-input">
                     </div>
-                    <input type="checkbox" checked>
                 </div>
-                <div style="display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <p class="card-title" style="font-size: 1rem;">Appointment Reminders</p>
-                        <p class="card-description">Get notified about upcoming appointments</p>
+                <div class="form-group">
+                    <label class="form-label">Age</label>
+                    <input type="number" id="age" min="1" max="120" placeholder="25" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Health Conditions</label>
+                    <div class="health-conditions">
+                        <label class="condition-checkbox">
+                            <input type="checkbox" value="diabetes">
+                            <span>Diabetes</span>
+                        </label>
+                        <label class="condition-checkbox">
+                            <input type="checkbox" value="hypertension">
+                            <span>Hypertension</span>
+                        </label>
+                        <label class="condition-checkbox">
+                            <input type="checkbox" value="heart_disease">
+                            <span>Heart Disease</span>
+                        </label>
+                        <label class="condition-checkbox">
+                            <input type="checkbox" value="obesity">
+                            <span>Obesity</span>
+                        </label>
+                        <label class="condition-checkbox">
+                            <input type="checkbox" value="thyroid">
+                            <span>Thyroid Issues</span>
+                        </label>
+                        <label class="condition-checkbox">
+                            <input type="checkbox" value="allergies">
+                            <span>Food Allergies</span>
+                        </label>
+                        <label class="condition-checkbox">
+                            <input type="checkbox" value="digestive">
+                            <span>Digestive Issues</span>
+                        </label>
+                        <label class="condition-checkbox">
+                            <input type="checkbox" value="kidney">
+                            <span>Kidney Disease</span>
+                        </label>
                     </div>
-                    <input type="checkbox" checked>
+                    <div class="selected-conditions" id="selectedConditions"></div>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb;">
-            <h3 class="card-title">Account Actions</h3>
-        </div>
-        <div class="card-content">
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <button class="btn btn-outline">Change Password</button>
-                <button class="btn btn-outline">Export Data</button>
-                <button class="btn btn-outline" style="color: #ef4444; border-color: #ef4444;">Delete Account</button>
+                <div class="form-group">
+                    <label class="form-label">Other Health Issues</label>
+                    <textarea id="otherConditions" class="form-textarea" placeholder="Please describe any other health conditions or concerns not listed above..."></textarea>
+                </div>
+                <button class="btn btn-primary" id="saveHealthBtn">Save Health Information</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+let selectedConditions = [];
+
+// Health conditions functionality
+document.querySelectorAll('.condition-checkbox input[type="checkbox"]').forEach(checkbox => {
+    checkbox.addEventListener('change', function() {
+        const condition = this.value;
+        const conditionName = this.nextElementSibling.textContent;
+        
+        if (this.checked) {
+            if (!selectedConditions.find(c => c.value === condition)) {
+                selectedConditions.push({ value: condition, name: conditionName });
+            }
+        } else {
+            selectedConditions = selectedConditions.filter(c => c.value !== condition);
+        }
+        
+        updateSelectedConditions();
+    });
+});
+
+function updateSelectedConditions() {
+    const container = document.getElementById('selectedConditions');
+    container.innerHTML = '';
+    
+    selectedConditions.forEach(condition => {
+        const tag = document.createElement('div');
+        tag.className = 'condition-tag';
+        tag.innerHTML = `
+            <span>${condition.name}</span>
+            <button onclick="removeCondition('${condition.value}')">&times;</button>
+        `;
+        container.appendChild(tag);
+    });
+}
+
+function removeCondition(conditionValue) {
+    // Uncheck the checkbox
+    const checkbox = document.querySelector(`input[value="${conditionValue}"]`);
+    if (checkbox) checkbox.checked = false;
+    
+    // Remove from selected conditions
+    selectedConditions = selectedConditions.filter(c => c.value !== conditionValue);
+    updateSelectedConditions();
+}
+
+document.getElementById('saveHealthBtn').addEventListener('click', function(e) {
+    e.preventDefault();
+    const weight = document.getElementById('weight').value;
+    const height = document.getElementById('height').value;
+    const age = document.getElementById('age').value;
+    const otherConditions = document.getElementById('otherConditions').value;
+    
+    let isValid = true;
+    
+    // Basic validation
+    if (weight && (isNaN(weight) || weight <= 0 || weight > 500)) {
+        document.getElementById('weight').style.borderColor = '#dc2626';
+        isValid = false;
+    } else {
+        document.getElementById('weight').style.borderColor = '#d1d5db';
+    }
+    
+    if (height && (isNaN(height) || height <= 0 || height > 300)) {
+        document.getElementById('height').style.borderColor = '#dc2626';
+        isValid = false;
+    } else {
+        document.getElementById('height').style.borderColor = '#d1d5db';
+    }
+    
+    if (age && (isNaN(age) || age <= 0 || age > 120)) {
+        document.getElementById('age').style.borderColor = '#dc2626';
+        isValid = false;
+    } else {
+        document.getElementById('age').style.borderColor = '#d1d5db';
+    }
+    
+    if (isValid) {
+        const healthData = {
+            weight: weight,
+            height: height,
+            age: age,
+            conditions: selectedConditions,
+            otherConditions: otherConditions
+        };
+        
+        console.log('Health data to save:', healthData);
+        showNotification('Health information saved successfully!', 'success');
+    } else {
+        showNotification('Please enter valid health information', 'error');
+    }
+});
+
 document.getElementById('updateProfileBtn').addEventListener('click', function(e) {
     e.preventDefault();
     const form = this.closest('.card');
@@ -126,36 +235,6 @@ document.getElementById('updateProfileBtn').addEventListener('click', function(e
     } else {
         showNotification('Please fill in all required fields', 'error');
     }
-});
-
-document.getElementById('saveGoalsBtn').addEventListener('click', function(e) {
-    e.preventDefault();
-    const form = this.closest('.card');
-    const inputs = form.querySelectorAll('input');
-    let isValid = true;
-    
-    inputs.forEach(input => {
-        if (!input.value.trim() || isNaN(input.value) || input.value <= 0) {
-            input.style.borderColor = '#dc2626';
-            isValid = false;
-        } else {
-            input.style.borderColor = '#d1d5db';
-        }
-    });
-    
-    if (isValid) {
-        showNotification('Goals saved successfully!', 'success');
-    } else {
-        showNotification('Please enter valid values for all goals', 'error');
-    }
-});
-
-document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
-    checkbox.addEventListener('change', function() {
-        const settingName = this.closest('div').querySelector('.card-title').textContent;
-        const isEnabled = this.checked;
-        showNotification(`${settingName} ${isEnabled ? 'enabled' : 'disabled'}`, 'info');
-    });
 });
 
 function showNotification(message, type) {
