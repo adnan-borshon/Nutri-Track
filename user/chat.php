@@ -1,7 +1,8 @@
 <?php
 $page_title = "Chat";
-$_SESSION['user_name'] = 'John Doe';
-$_SESSION['user_logged_in'] = true;
+require_once '../includes/session.php';
+checkAuth('user');
+$user = getCurrentUser();
 include 'header.php';
 
 $messages = [
@@ -27,7 +28,7 @@ $messages = [
             </div>
         </div>
 
-        <div style="flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;">
+        <div style="flex: 1; padding: 1rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem;" id="messagesContainer">
             <?php foreach ($messages as $message): ?>
                 <div style="display: flex; <?php echo $message['sender'] === 'user' ? 'justify-content: flex-end;' : 'justify-content: flex-start;'; ?>">
                     <div style="max-width: 70%; display: flex; flex-direction: column; gap: 0.25rem;">
@@ -44,8 +45,8 @@ $messages = [
 
         <div style="padding: 1rem; border-top: 1px solid #e5e7eb;">
             <div style="display: flex; gap: 0.75rem;">
-                <input type="text" placeholder="Type your message..." class="form-input" style="flex: 1;">
-                <button class="btn btn-primary">
+                <input type="text" id="chatInput" placeholder="Type your message..." class="form-input" style="flex: 1;">
+                <button class="btn btn-primary" id="sendBtn">
 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;stroke-width:1.5;vertical-align:middle;margin-right:4px;color:#278b63;">
   <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
 </svg> Send</button>
@@ -53,5 +54,52 @@ $messages = [
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('sendBtn').addEventListener('click', sendMessage);
+document.getElementById('chatInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+
+function sendMessage() {
+    const input = document.getElementById('chatInput');
+    const message = input.value.trim();
+    
+    if (!message) return;
+    
+    const messagesContainer = document.getElementById('messagesContainer');
+    const messageDiv = document.createElement('div');
+    messageDiv.style.cssText = 'display: flex; justify-content: flex-end;';
+    messageDiv.innerHTML = `
+        <div style="max-width: 70%; display: flex; flex-direction: column; gap: 0.25rem;">
+            <div style="background: #16a34a; color: white; padding: 0.75rem 1rem; border-radius: 1rem; border-bottom-right-radius: 0.25rem;">
+                ${message}
+            </div>
+            <p class="stat-label" style="text-align: right;">Just now</p>
+        </div>
+    `;
+    
+    messagesContainer.appendChild(messageDiv);
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    input.value = '';
+    
+    showNotification('Message sent!', 'success');
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem;
+        border-radius: 0.375rem; color: white; font-weight: 500; z-index: 1000;
+        background: ${type === 'success' ? '#278b63' : '#3b82f6'};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
 
 <?php include 'footer.php'; ?>

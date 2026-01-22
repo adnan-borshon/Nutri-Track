@@ -1,7 +1,8 @@
 <?php
 $page_title = "Water Tracking";
-$_SESSION['user_name'] = 'John Doe';
-$_SESSION['user_logged_in'] = true;
+require_once '../includes/session.php';
+checkAuth('user');
+$user = getCurrentUser();
 include 'header.php';
 
 $glasses = 5;
@@ -45,22 +46,22 @@ $weeklyAverage = round(array_sum($weeklyData) / 7);
                 </p>
 
                 <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1.5rem;">
-                    <button class="btn btn-outline" style="width: 3rem; height: 3rem; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;">
+                    <button class="btn btn-outline" id="removeWaterBtn" style="width: 3rem; height: 3rem; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center;">
 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;stroke-width:3.5;color:#278b63;">
   <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14" />
 </svg>
                     </button>
-                    <button class="btn btn-primary" style="padding: 0.75rem 2rem;">
+                    <button class="btn btn-primary" id="addWaterBtn" style="padding: 0.75rem 2rem;">
 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;stroke-width:1.5;vertical-align:middle;margin-right:4px;color:#278b63;">
   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 </svg> Add Glass</button>
                 </div>
 
                 <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
-                    <button class="btn btn-outline">+1</button>
-                    <button class="btn btn-outline">+2</button>
-                    <button class="btn btn-outline">+3</button>
-                    <button class="btn btn-outline">+4</button>
+                    <button class="btn btn-outline quick-add" data-amount="1">+1</button>
+                    <button class="btn btn-outline quick-add" data-amount="2">+2</button>
+                    <button class="btn btn-outline quick-add" data-amount="3">+3</button>
+                    <button class="btn btn-outline quick-add" data-amount="4">+4</button>
                 </div>
             </div>
         </div>
@@ -129,5 +130,65 @@ $weeklyAverage = round(array_sum($weeklyData) / 7);
         </div>
     </div>
 </div>
+
+<script>
+let currentGlasses = <?php echo $glasses; ?>;
+const target = <?php echo $target; ?>;
+
+function updateWaterDisplay() {
+    const percentage = Math.round((currentGlasses / target) * 100);
+    const circumference = 2 * Math.PI * 70;
+    const offset = circumference * (1 - currentGlasses / target);
+    
+    document.querySelector('circle[stroke="#06b6d4"]').style.strokeDashoffset = offset;
+    document.querySelector('.stat-value').textContent = currentGlasses;
+    document.querySelectorAll('.stat-value')[1].textContent = currentGlasses * 250;
+    document.querySelectorAll('.stat-value')[2].textContent = percentage + '%';
+    
+    const description = document.querySelector('.card-description');
+    if (currentGlasses >= target) {
+        description.textContent = "Great job! You've reached your goal!";
+    } else {
+        const remaining = target - currentGlasses;
+        description.textContent = `${remaining} more glass${remaining !== 1 ? 'es' : ''} to go`;
+    }
+}
+
+document.getElementById('addWaterBtn').addEventListener('click', function() {
+    currentGlasses++;
+    updateWaterDisplay();
+    showNotification('Added 1 glass of water!', 'success');
+});
+
+document.getElementById('removeWaterBtn').addEventListener('click', function() {
+    if (currentGlasses > 0) {
+        currentGlasses--;
+        updateWaterDisplay();
+        showNotification('Removed 1 glass of water', 'info');
+    }
+});
+
+document.querySelectorAll('.quick-add').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const amount = parseInt(this.dataset.amount);
+        currentGlasses += amount;
+        updateWaterDisplay();
+        showNotification(`Added ${amount} glass${amount > 1 ? 'es' : ''} of water!`, 'success');
+    });
+});
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem;
+        border-radius: 0.375rem; color: white; font-weight: 500; z-index: 1000;
+        background: ${type === 'success' ? '#278b63' : '#3b82f6'};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
 
 <?php include 'footer.php'; ?>

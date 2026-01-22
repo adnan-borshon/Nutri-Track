@@ -1,4 +1,8 @@
-<?php include 'header.php'; ?>
+<?php
+require_once '../includes/session.php';
+checkAuth('nutritionist');
+include 'header.php';
+?>
 
 <div class="section-header">
     <div class="container">
@@ -6,7 +10,7 @@
             <h1 class="section-title">Nutrition Guides</h1>
             <p class="section-description">Educational resources for your users</p>
         </div>
-        <button class="btn btn-primary">
+        <button class="btn btn-primary" onclick="showCreateGuideModal()">
 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;stroke-width:1.5;color:#278b63;vertical-align:middle;margin-right:4px;">
   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 </svg> Create Guide</button>
@@ -144,5 +148,38 @@
         </div>
     </div>
 </div>
+
+<script>
+function showCreateGuideModal() {
+    showNotification('Create Guide feature coming soon!', 'info');
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 0.375rem;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        max-width: 300px;
+    `;
+    
+    const colors = {
+        success: '#278b63',
+        error: '#dc2626',
+        info: '#3b82f6'
+    };
+    
+    notification.style.backgroundColor = colors[type] || colors.info;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
 
 <?php include 'footer.php'; ?>

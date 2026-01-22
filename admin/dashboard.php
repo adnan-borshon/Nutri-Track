@@ -1,9 +1,15 @@
-<?php include 'header.php'; ?>
+<?php
+$page_title = "Admin Dashboard";
+require_once '../includes/session.php';
+checkAuth('admin');
+$user = getCurrentUser();
+include 'header.php';
+?>
 
 <div class="space-y-6">
     <div>
-        <h1 class="text-3xl font-bold">Dashboard</h1>
-        <p class="text-muted-foreground">Overview of your platform performance</p>
+        <h1 class="text-3xl font-bold">Admin Dashboard</h1>
+        <p class="text-muted-foreground">Welcome back, <?php echo $user['name']; ?>! Overview of your platform performance</p>
     </div>
 
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">

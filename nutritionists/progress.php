@@ -1,4 +1,8 @@
-<?php include 'header.php'; ?>
+<?php
+require_once '../includes/session.php';
+checkAuth('nutritionist');
+include 'header.php';
+?>
 
 <div class="section-header">
     <h1 class="section-title">Progress Log</h1>

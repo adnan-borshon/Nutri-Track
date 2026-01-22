@@ -1,7 +1,8 @@
 <?php
 $page_title = "Dashboard";
-$_SESSION['user_name'] = 'John Doe';
-$_SESSION['user_logged_in'] = true;
+require_once '../includes/session.php';
+checkAuth('user');
+$user = getCurrentUser();
 include 'header.php';
 
 $caloriesConsumed = 890;
@@ -23,7 +24,7 @@ $weightData = [81.7, 81.8, 82.0, 82.1, 82.4, 82.3, 82.5];
 
 <div class="space-y-6">
     <div>
-        <h1 class="text-3xl font-bold">Welcome back, <?php echo explode(' ', $_SESSION['user_name'])[0]; ?>!</h1>
+        <h1 class="text-3xl font-bold">Welcome back, <?php echo explode(' ', $user['name'])[0]; ?>!</h1>
         <p class="text-muted-foreground">Here's your health summary for today</p>
     </div>
 

@@ -1,4 +1,10 @@
-<?php $page_title = "Diet Plan"; $_SESSION['user_name'] = 'John Doe'; $_SESSION['user_logged_in'] = true; include 'header.php'; ?>
+<?php
+$page_title = "Diet Plan";
+require_once '../includes/session.php';
+checkAuth('user');
+$user = getCurrentUser();
+include 'header.php';
+?>
 <div class="section">
     <div>
         <h1 class="section-title">Diet Plan</h1>

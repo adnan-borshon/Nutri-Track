@@ -1,9 +1,15 @@
-<?php include 'header.php'; ?>
+<?php
+$page_title = "Dashboard";
+require_once '../includes/session.php';
+checkAuth('nutritionist');
+$user = getCurrentUser();
+include 'header.php';
+?>
 
 <div class="space-y-6">
     <div>
-        <h1 class="text-3xl font-bold">Dashboard</h1>
-        <p class="text-muted-foreground">Welcome back! Here's your overview.</p>
+        <h1 class="text-3xl font-bold">Welcome back, Dr. <?php echo explode(' ', $user['name'])[1]; ?>!</h1>
+        <p class="text-muted-foreground">Here's your client overview for today.</p>
     </div>
 
     <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">

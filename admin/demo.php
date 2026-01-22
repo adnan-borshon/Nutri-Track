@@ -1,4 +1,8 @@
-<?php include 'header.php'; ?>
+<?php
+require_once '../includes/session.php';
+checkAuth('admin');
+include 'header.php';
+?>
 
 <div class="space-y-6">
     <div class="admin-header">

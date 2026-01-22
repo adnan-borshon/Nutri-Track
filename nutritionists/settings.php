@@ -1,4 +1,8 @@
-<?php include 'header.php'; ?>
+<?php
+require_once '../includes/session.php';
+checkAuth('nutritionist');
+include 'header.php';
+?>
 
 <div class="space-y-6">
     <div>
@@ -41,7 +45,7 @@
                     <textarea class="form-textarea" placeholder="Tell users about yourself...">Certified nutritionist with 8+ years of experience in weight management and healthy lifestyle coaching.</textarea>
                 </div>
                 <div class="form-actions">
-                    <button class="btn btn-primary">Update Profile</button>
+                    <button class="btn btn-primary" onclick="updateProfile()">Update Profile</button>
                 </div>
             </div>
         </div>
@@ -58,7 +62,7 @@
                         <h4 class="settings-item-title">Email Notifications</h4>
                         <p class="settings-item-description">Receive email notifications for new messages</p>
                     </div>
-                    <div class="toggle-switch active">
+                    <div class="toggle-switch active" onclick="toggleSetting(this)">
                         <div class="toggle-handle"></div>
                     </div>
                 </div>
@@ -68,7 +72,7 @@
                         <h4 class="settings-item-title">SMS Notifications</h4>
                         <p class="settings-item-description">Get text messages for urgent updates</p>
                     </div>
-                    <div class="toggle-switch">
+                    <div class="toggle-switch" onclick="toggleSetting(this)">
                         <div class="toggle-handle"></div>
                     </div>
                 </div>
@@ -78,7 +82,7 @@
                         <h4 class="settings-item-title">Push Notifications</h4>
                         <p class="settings-item-description">Receive push notifications on your device</p>
                     </div>
-                    <div class="toggle-switch active">
+                    <div class="toggle-switch active" onclick="toggleSetting(this)">
                         <div class="toggle-handle"></div>
                     </div>
                 </div>
@@ -107,11 +111,95 @@
                     </div>
                 </div>
                 <div class="form-actions">
-                    <button class="btn btn-primary">Update Password</button>
+                    <button class="btn btn-primary" onclick="updatePassword()">Update Password</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+function updateProfile() {
+    const inputs = document.querySelectorAll('.form-input, .form-textarea');
+    let isValid = true;
+    
+    inputs.forEach(input => {
+        if (input.hasAttribute('required') && !input.value.trim()) {
+            input.style.borderColor = '#dc2626';
+            isValid = false;
+        } else {
+            input.style.borderColor = '#d1d5db';
+        }
+    });
+    
+    if (!isValid) {
+        showNotification('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    showNotification('Profile updated successfully!', 'success');
+}
+
+function updatePassword() {
+    const passwordInputs = document.querySelectorAll('input[type="password"]');
+    const currentPassword = passwordInputs[0].value;
+    const newPassword = passwordInputs[1].value;
+    const confirmPassword = passwordInputs[2].value;
+    
+    if (!currentPassword || !newPassword || !confirmPassword) {
+        showNotification('Please fill in all password fields', 'error');
+        return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+        showNotification('New passwords do not match', 'error');
+        return;
+    }
+    
+    if (newPassword.length < 8) {
+        showNotification('Password must be at least 8 characters long', 'error');
+        return;
+    }
+    
+    showNotification('Password updated successfully!', 'success');
+    passwordInputs.forEach(input => input.value = '');
+}
+
+function toggleSetting(toggle) {
+    toggle.classList.toggle('active');
+    
+    const settingName = toggle.closest('.settings-item').querySelector('h4').textContent;
+    const isActive = toggle.classList.contains('active');
+    
+    showNotification(`${settingName} ${isActive ? 'enabled' : 'disabled'}`, 'info');
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 0.375rem;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        max-width: 300px;
+    `;
+    
+    const colors = {
+        success: '#278b63',
+        error: '#dc2626',
+        info: '#3b82f6'
+    };
+    
+    notification.style.backgroundColor = colors[type] || colors.info;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
 
 <?php include 'footer.php'; ?>

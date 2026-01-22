@@ -1,4 +1,8 @@
-<?php include 'header.php'; ?>
+<?php
+require_once '../includes/session.php';
+checkAuth('nutritionist');
+include 'header.php';
+?>
 
 <div class="space-y-6">
     <div>
@@ -109,7 +113,7 @@
                     <div class="chat-input-container">
                         <div class="chat-input-wrapper">
                             <input type="text" class="chat-input" placeholder="Type your message...">
-                            <button class="btn btn-primary btn-sm">Send</button>
+                            <button class="btn btn-primary btn-sm" onclick="sendChatMessage()">Send</button>
                         </div>
                     </div>
                 </div>
@@ -117,5 +121,70 @@
         </div>
     </div>
 </div>
+
+<script>
+function sendChatMessage() {
+    const input = document.querySelector('.chat-input');
+    const message = input.value.trim();
+    
+    if (message) {
+        const messagesContainer = document.querySelector('.chat-messages');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = 'message nutritionist';
+        messageDiv.innerHTML = `
+            <div class="message-bubble">${message}</div>
+            <div class="message-time">Just now</div>
+        `;
+        messagesContainer.appendChild(messageDiv);
+        
+        input.value = '';
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        showNotification('Message sent!', 'success');
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 0.375rem;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        max-width: 300px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    `;
+    
+    const colors = {
+        success: '#278b63',
+        error: '#dc2626',
+        info: '#3b82f6'
+    };
+    
+    notification.style.backgroundColor = colors[type] || colors.info;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => notification.remove(), 3000);
+}
+
+// Enter key to send message
+document.addEventListener('DOMContentLoaded', function() {
+    const chatInput = document.querySelector('.chat-input');
+    if (chatInput) {
+        chatInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendChatMessage();
+            }
+        });
+    }
+});
+</script>
 
 <?php include 'footer.php'; ?>

@@ -1,7 +1,8 @@
 <?php
 $page_title = "Appointments";
-$_SESSION['user_name'] = 'John Doe';
-$_SESSION['user_logged_in'] = true;
+require_once '../includes/session.php';
+checkAuth('user');
+$user = getCurrentUser();
 include 'header.php';
 
 $appointments = [
@@ -20,7 +21,7 @@ $past = array_filter($appointments, fn($a) => $a['status'] === 'completed');
             <h1 class="section-title">Appointments</h1>
             <p class="section-description">Schedule and manage your consultations</p>
         </div>
-        <button class="btn btn-primary">
+        <button class="btn btn-primary" id="bookAppointmentBtn">
 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;stroke-width:1.5;vertical-align:middle;margin-right:4px;color:#278b63;">
   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
 </svg> Book Appointment</button>
@@ -119,5 +120,80 @@ $past = array_filter($appointments, fn($a) => $a['status'] === 'completed');
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('bookAppointmentBtn').addEventListener('click', function() {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Book Appointment</h2>
+                <button onclick="this.closest('.modal-overlay').remove()" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="appointmentForm" class="form">
+                    <div class="form-group">
+                        <label class="form-label">Nutritionist</label>
+                        <select class="form-input" name="nutritionist" required>
+                            <option value="">Select Nutritionist</option>
+                            <option value="dr_smith">Dr. Sarah Smith</option>
+                            <option value="dr_chen">Dr. Michael Chen</option>
+                            <option value="dr_wilson">Dr. Emily Wilson</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Date</label>
+                            <input type="date" class="form-input" name="date" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Time</label>
+                            <select class="form-input" name="time" required>
+                                <option value="">Select Time</option>
+                                <option value="09:00">9:00 AM</option>
+                                <option value="10:00">10:00 AM</option>
+                                <option value="11:00">11:00 AM</option>
+                                <option value="14:00">2:00 PM</option>
+                                <option value="15:00">3:00 PM</option>
+                                <option value="16:00">4:00 PM</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Reason for Visit</label>
+                        <textarea class="form-textarea" name="reason" rows="3" placeholder="Brief description..."></textarea>
+                    </div>
+                    <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+                        <button type="button" onclick="this.closest('.modal-overlay').remove()" class="btn btn-outline">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Book Appointment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    document.getElementById('appointmentForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        showNotification('Appointment booked successfully!', 'success');
+        modal.remove();
+    });
+});
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem;
+        border-radius: 0.375rem; color: white; font-weight: 500; z-index: 1000;
+        background: ${type === 'success' ? '#278b63' : '#3b82f6'};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
 
 <?php include 'footer.php'; ?>

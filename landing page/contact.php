@@ -21,6 +21,117 @@ if ($_POST && isset($_POST['name']) && isset($_POST['email']) && isset($_POST['s
 }
 ?>
 
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const contactForm = document.getElementById('contact-form');
+    const messageTextarea = document.getElementById('message');
+    
+    if (messageTextarea) {
+        messageTextarea.addEventListener('input', function() {
+            const length = this.value.length;
+            const minLength = 10;
+            const indicator = this.parentNode.querySelector('.char-indicator');
+            
+            if (!indicator) {
+                const div = document.createElement('div');
+                div.className = 'char-indicator';
+                div.style.cssText = 'font-size: 0.75rem; margin-top: 0.25rem;';
+                this.parentNode.appendChild(div);
+            }
+            
+            const indicatorEl = this.parentNode.querySelector('.char-indicator');
+            if (length < minLength) {
+                indicatorEl.style.color = '#ef4444';
+                indicatorEl.textContent = `${length}/${minLength} characters (minimum required)`;
+            } else {
+                indicatorEl.style.color = '#22c55e';
+                indicatorEl.textContent = `${length} characters`;
+            }
+        });
+    }
+    
+    if (contactForm) {
+        contactForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const subject = document.getElementById('subject').value;
+            const message = document.getElementById('message').value;
+            
+            if (message.length < 10) {
+                const notification = document.createElement('div');
+                notification.className = 'notification notification-error';
+                notification.innerHTML = '<div style="display: flex; align-items: center; gap: 0.5rem;"><span>❌</span><span>Message must be at least 10 characters long!</span></div>';
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 5000);
+                return;
+            }
+            
+            // Simulate form submission
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = 'Sending...';
+            submitBtn.disabled = true;
+            
+            setTimeout(() => {
+                const notification = document.createElement('div');
+                notification.className = 'notification notification-success';
+                notification.innerHTML = '<div style="display: flex; align-items: center; gap: 0.5rem;"><span>✅</span><span>Message sent successfully! We\'ll get back to you within 24 hours.</span></div>';
+                document.body.appendChild(notification);
+                
+                // Reset form
+                this.reset();
+                submitBtn.innerHTML = 'Send Message 📤';
+                submitBtn.disabled = false;
+                
+                // Remove character indicator
+                const indicator = document.querySelector('.char-indicator');
+                if (indicator) indicator.remove();
+                
+                setTimeout(() => notification.remove(), 5000);
+            }, 2000);
+        });
+    }
+    
+    // FAQ Toggle Functionality
+    const faqItems = document.querySelectorAll('.faq-item');
+    faqItems.forEach(item => {
+        const question = item.querySelector('.faq-question');
+        const answer = item.querySelector('.faq-answer');
+        
+        if (question && answer) {
+            question.style.cursor = 'pointer';
+            question.style.userSelect = 'none';
+            answer.style.display = 'none';
+            
+            question.addEventListener('click', function() {
+                const isVisible = answer.style.display === 'block';
+                
+                // Close all other FAQ items
+                faqItems.forEach(otherItem => {
+                    const otherAnswer = otherItem.querySelector('.faq-answer');
+                    const otherQuestion = otherItem.querySelector('.faq-question');
+                    if (otherAnswer && otherQuestion !== question) {
+                        otherAnswer.style.display = 'none';
+                        otherQuestion.style.color = '';
+                    }
+                });
+                
+                // Toggle current item
+                if (isVisible) {
+                    answer.style.display = 'none';
+                    question.style.color = '';
+                } else {
+                    answer.style.display = 'block';
+                    question.style.color = '#278b63';
+                }
+            });
+        }
+    });
+});
+</script>
+?>
+
 <section class="section">
     <div class="container">
         <div class="section-header">
@@ -48,7 +159,7 @@ if ($_POST && isset($_POST['name']) && isset($_POST['email']) && isset($_POST['s
                         </div>
                     <?php endif; ?>
                     
-                    <form method="POST" class="form">
+                    <form method="POST" class="form" id="contact-form">
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="name" class="form-label">Name</label>
@@ -61,11 +172,20 @@ if ($_POST && isset($_POST['name']) && isset($_POST['email']) && isset($_POST['s
                         </div>
                         <div class="form-group">
                             <label for="subject" class="form-label">Subject</label>
-                            <input type="text" id="subject" name="subject" placeholder="How can we help?" required class="form-input">
+                            <select id="subject" name="subject" required class="form-input">
+                                <option value="">Select a topic</option>
+                                <option value="general">General Inquiry</option>
+                                <option value="support">Technical Support</option>
+                                <option value="billing">Billing Question</option>
+                                <option value="feature">Feature Request</option>
+                                <option value="partnership">Partnership</option>
+                                <option value="other">Other</option>
+                            </select>
                         </div>
                         <div class="form-group">
                             <label for="message" class="form-label">Message</label>
-                            <textarea id="message" name="message" placeholder="Tell us more about your inquiry..." required class="form-textarea"></textarea>
+                            <textarea id="message" name="message" placeholder="Tell us more about your inquiry..." required class="form-textarea" rows="5"></textarea>
+                            <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">Minimum 10 characters</div>
                         </div>
                         <button type="submit" class="btn btn-primary">
                             Send Message 📤

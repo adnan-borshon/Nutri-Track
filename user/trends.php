@@ -1,7 +1,8 @@
 <?php
 $page_title = "Trends";
-$_SESSION['user_name'] = 'John Doe';
-$_SESSION['user_logged_in'] = true;
+require_once '../includes/session.php';
+checkAuth('user');
+$user = getCurrentUser();
 include 'header.php';
 
 $weightData = [82.5, 82.3, 82.4, 82.1, 82.0, 81.8, 81.7];

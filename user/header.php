@@ -1,9 +1,6 @@
 <?php
-// session_start();
-// if (!isset($_SESSION['user_logged_in'])) {
-//     header('Location: ../landing page/login.php');
-//     exit;
-// }
+require_once '../includes/session.php';
+$user = getCurrentUser();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -19,19 +16,10 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <a href="dashboard.php" class="logo">
-                       <a href="index.php" class="logo">
                     <div style="display:flex; justify-self: center;">
-                    <img style="width:30px;height:30px" src="../assets/images/nutritrak_logo-removebg-preview.png" alt="NutriTrack Logo">
-
+                        <img style="width:30px;height:30px" src="../assets/images/nutritrak_logo-removebg-preview.png" alt="NutriTrack Logo">
                     </div>
-                    <span class="logo-text"><span style="color:#278b63;">
-
-                        Nutri
-</span>
-                Track
-                </span>
-                </a>
-             
+                    <span class="logo-text"><span style="color:#278b63;">Nutri</span>Track</span>
                 </a>
             </div>
             
@@ -91,13 +79,13 @@
             
             <div class="sidebar-footer">
                 <div class="user-info">
-                    <div class="user-avatar"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
+                    <div class="user-avatar"><?php echo getUserInitials($user['name']); ?></div>
                     <div>
-                        <div class="team-name"><?php echo $_SESSION['user_name'] ?? 'User'; ?></div>
-                        <div class="team-role">Member</div>
+                        <div class="team-name"><?php echo $user['name']; ?></div>
+                        <div class="team-role">User</div>
                     </div>
                 </div>
-                <a href="../landing page/login.php?logout=1" class="btn btn-outline">
+                <a href="../landing page/auth.php?logout=1" class="btn btn-outline">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;stroke-width:1.5;color:#278b63;vertical-align:middle;margin-right:8px;">
   <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15M12 9l-3 3m0 0 3 3m-3-3h12.75" />
 </svg> Log out
@@ -118,8 +106,8 @@
                         <div class="notification-dot"></div>
                     </div>
                     <div class="user-info">
-                        <div class="user-avatar"><?php echo strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)); ?></div>
-                        <span class="team-role"><?php echo $_SESSION['user_name'] ?? 'User'; ?></span>
+                        <div class="user-avatar"><?php echo getUserInitials($user['name']); ?></div>
+                        <span class="team-role"><?php echo $user['name']; ?></span>
                     </div>
                 </div>
             </header>

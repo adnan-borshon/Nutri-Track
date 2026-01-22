@@ -1,4 +1,8 @@
-<?php include 'header.php'; ?>
+<?php
+require_once '../includes/session.php';
+checkAuth('admin');
+include 'header.php';
+?>
 
 <div class="space-y-6">
     <div class="page-header">
@@ -6,7 +10,7 @@
             <h1 class="text-3xl font-bold">User Management</h1>
             <p class="text-muted-foreground">Manage platform users and their assignments</p>
         </div>
-        <button class="btn btn-primary">
+        <button class="btn btn-primary" onclick="showAddUserModal()">
 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-plus" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 5l0 14" /><path d="M5 12l14 0" /></svg> Add User
         </button>
     </div>
@@ -191,3 +195,57 @@
 </div>
 
 <?php include 'footer.php'; ?>
+<script>
+function showAddUserModal() {
+    showNotification('Add User feature coming soon!', 'info');
+}
+
+function viewUser(button) {
+    const row = button.closest('tr');
+    const userName = row.querySelector('.user-name').textContent;
+    showNotification(`Viewing: ${userName}`, 'info');
+}
+
+function approveUser(button) {
+    const row = button.closest('tr');
+    const userName = row.querySelector('.user-name').textContent;
+    showNotification(`${userName} approved successfully!`, 'success');
+}
+
+function assignUser(button) {
+    const row = button.closest('tr');
+    const userName = row.querySelector('.user-name').textContent;
+    showNotification(`Assigning nutritionist to ${userName}`, 'info');
+}
+
+function showNotifications() {
+    showNotification('Notifications feature coming soon!', 'info');
+}
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 0.375rem;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        max-width: 300px;
+    `;
+    
+    const colors = {
+        success: '#278b63',
+        error: '#dc2626',
+        info: '#3b82f6'
+    };
+    
+    notification.style.backgroundColor = colors[type] || colors.info;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
