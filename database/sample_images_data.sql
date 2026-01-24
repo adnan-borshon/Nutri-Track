@@ -1,0 +1,2 @@
+-- No sample data needed for testimonials or hero images
+-- Images are only supported for guides, recipes, and user profiles

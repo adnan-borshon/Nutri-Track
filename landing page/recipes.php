@@ -2,6 +2,7 @@
 $page_title = "Recipes";
 include '../includes/header.php';
 require_once '../config/db.php';
+require_once '../includes/image_helper.php';
 
 $db = getDB();
 
@@ -23,7 +24,15 @@ $recipes = $stmt->fetchAll();
         <div class="grid grid-4" style="margin-bottom: 3rem;">
             <?php foreach ($recipes as $recipe): ?>
                 <div class="recipe-card">
-                    <div class="recipe-image">🍽️</div>
+                    <div class="recipe-image">
+                        <?php 
+                        $imageSrc = getImageSrc($recipe['image_path']);
+                        if ($imageSrc): ?>
+                            <img src="<?php echo htmlspecialchars($imageSrc); ?>" alt="<?php echo htmlspecialchars($recipe['title']); ?>" style="width: 100%; height: 150px; object-fit: cover; border-radius: 0.5rem;">
+                        <?php else: ?>
+                            🍽️
+                        <?php endif; ?>
+                    </div>
                     <div class="recipe-content">
                         <span class="recipe-category"><?php echo ucfirst($recipe['meal_type']); ?></span>
                         <h3 class="recipe-title"><?php echo htmlspecialchars($recipe['title']); ?></h3>

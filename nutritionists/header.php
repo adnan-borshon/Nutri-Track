@@ -107,7 +107,7 @@ $notificationCount = getUnreadNotificationCount($user['id']);
             
             <div class="sidebar-footer">
                 <div class="user-info" onclick="showProfilePopup()" style="cursor: pointer;">
-                    <div class="user-avatar"><?php echo getUserInitials($user['name']); ?></div>
+                    <?php echo getUserAvatar($user, '2rem'); ?>
                     <div>
                         <div class="team-name"><?php echo $user['name']; ?></div>
                         <div class="team-role">Nutritionist</div>
@@ -182,7 +182,7 @@ $notificationCount = getUnreadNotificationCount($user['id']);
                         </div>
                     </div>
                     <div class="user-info" onclick="showProfilePopup()" style="cursor: pointer;">
-                        <div class="user-avatar"><?php echo getUserInitials($user['name']); ?></div>
+                        <?php echo getUserAvatar($user, '2rem'); ?>
                         <span class="team-role"><?php echo $user['name']; ?></span>
                     </div>
                 </div>
@@ -204,7 +204,11 @@ $notificationCount = getUnreadNotificationCount($user['id']);
         </div>
         
         <div style="text-align: center; margin-bottom: 1.5rem;">
-            <div style="width: 4rem; height: 4rem; background: linear-gradient(135deg, #278b63, #16a34a); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.5rem; margin: 0 auto 1rem; box-shadow: 0 4px 8px rgba(39, 139, 99, 0.3);"><?php echo getUserInitials($user['name']); ?></div>
+            <?php if (!empty($user['profile_image']) && file_exists(__DIR__ . '/../' . $user['profile_image'])): ?>
+                <img src="../<?php echo htmlspecialchars($user['profile_image']); ?>" alt="Profile" style="width: 4rem; height: 4rem; border-radius: 50%; object-fit: cover; margin: 0 auto 1rem; box-shadow: 0 4px 8px rgba(39, 139, 99, 0.3);">
+            <?php else: ?>
+                <div style="width: 4rem; height: 4rem; background: linear-gradient(135deg, #278b63, #16a34a); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.5rem; margin: 0 auto 1rem; box-shadow: 0 4px 8px rgba(39, 139, 99, 0.3);"><?php echo getUserInitials($user['name']); ?></div>
+            <?php endif; ?>
             <h4 style="font-size: 1.125rem; font-weight: 600; margin: 0 0 0.25rem 0; color: #111827;"><?php echo $user['name']; ?></h4>
             <p style="color: #278b63; font-size: 0.875rem; font-weight: 500; margin: 0;">Nutritionist</p>
         </div>

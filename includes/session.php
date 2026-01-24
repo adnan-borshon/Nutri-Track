@@ -53,6 +53,15 @@ function getUserInitials($name = null) {
     return strtoupper(substr($parts[0], 0, 1) . (isset($parts[1]) ? substr($parts[1], 0, 1) : ''));
 }
 
+// Get user avatar HTML (image or initials)
+function getUserAvatar($user, $size = '2rem', $class = 'user-avatar') {
+    if (!empty($user['profile_image']) && file_exists(__DIR__ . '/../' . $user['profile_image'])) {
+        return '<img src="../' . htmlspecialchars($user['profile_image']) . '" alt="Profile" class="' . $class . '" style="width: ' . $size . '; height: ' . $size . '; border-radius: 50%; object-fit: cover;">';
+    } else {
+        return '<div class="' . $class . '" style="width: ' . $size . '; height: ' . $size . ';">' . getUserInitials($user['name']) . '</div>';
+    }
+}
+
 // Logout user
 function logout() {
     session_destroy();

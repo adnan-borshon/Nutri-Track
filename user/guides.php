@@ -2,16 +2,15 @@
 require_once '../includes/session.php';
 checkAuth('user');
 $currentUser = getCurrentUser();
+require_once '../includes/image_helper.php';
 
 $db = getDB();
 
-// Get all guides from user's nutritionist
-$stmt = $db->prepare("SELECT g.*, u.name as author_name 
-                      FROM nutrition_guides g 
-                      JOIN users u ON g.nutritionist_id = u.id 
-                      WHERE g.nutritionist_id = ? 
-                      ORDER BY g.created_at DESC");
-$stmt->execute([$currentUser['nutritionist_id']]);
+// Get all guides from all nutritionists
+$stmt = $db->query("SELECT g.*, u.name as author_name 
+                    FROM nutrition_guides g 
+                    JOIN users u ON g.nutritionist_id = u.id 
+                    ORDER BY g.created_at DESC");
 $guides = $stmt->fetchAll();
 
 // Category colors
@@ -47,10 +46,12 @@ include 'header.php';
         <?php foreach ($guides as $guide): 
             $colors = $categoryColors[$guide['category']] ?? $categoryColors['General'];
         ?>
-        <div class="card guide-card" onclick="viewGuide(<?= $guide['id'] ?>, '<?= htmlspecialchars(addslashes($guide['title'])) ?>', '<?= htmlspecialchars(addslashes($guide['content'])) ?>', '<?= $guide['image_path'] ?>', '<?= $guide['author_name'] ?>', '<?= $guide['read_time'] ?>', '<?= $guide['difficulty'] ?>')">
+        <div class="card guide-card" onclick="viewGuide(<?= $guide['id'] ?>, `<?= htmlspecialchars($guide['title']) ?>`, `<?= htmlspecialchars($guide['content']) ?>`, '<?= $guide['image_path'] ?>', '<?= htmlspecialchars($guide['author_name']) ?>', '<?= $guide['read_time'] ?>', '<?= $guide['difficulty'] ?>')">
             <div class="card-content">
-                <?php if ($guide['image_path']): ?>
-                <div style="width: 100%; height: 150px; background-image: url('../<?= htmlspecialchars($guide['image_path']) ?>'); background-size: cover; background-position: center; border-radius: 0.5rem; margin-bottom: 1rem;"></div>
+                <?php 
+                $imageSrc = getImageSrc($guide['image_path']);
+                if ($imageSrc): ?>
+                <div style="width: 100%; height: 150px; background-image: url('<?= htmlspecialchars($imageSrc) ?>'); background-size: cover; background-position: center; border-radius: 0.5rem; margin-bottom: 1rem;"></div>
                 <?php endif; ?>
                 
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
@@ -78,24 +79,24 @@ function viewGuide(id, title, content, imagePath, author, readTime, difficulty) 
     modal.className = 'guide-modal';
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem;';
     
-    const imageHtml = imagePath ? `<img src="../${imagePath}" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 0.5rem; margin-bottom: 1.5rem;">` : '';
+    const imageHtml = imagePath ? (imagePath.startsWith('http') ? `<img src="${imagePath}" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 0.5rem; margin-bottom: 1.5rem;">` : `<img src="../${imagePath}" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 0.5rem; margin-bottom: 1.5rem;">`) : '';
     
     modal.innerHTML = `
-        <div style="background: white; padding: 2rem; border-radius: 0.75rem; max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h2 style="margin: 0; font-size: 1.5rem; font-weight: 600;">${title}</h2>
-                <button class="close-guide-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">&times;</button>
+        <div style="background: white; padding: 2rem; border-radius: 0.75rem; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem;">
+                <h2 style="margin: 0; font-size: 1.5rem; font-weight: 600; color: #111827; line-height: 1.3; flex: 1; margin-right: 1rem;">${title}</h2>
+                <button class="close-guide-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 0.25rem; border-radius: 0.25rem; flex-shrink: 0;" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='none'">&times;</button>
             </div>
             
             ${imageHtml}
             
-            <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: #6b7280;">
-                <span>By ${author}</span>
-                <span>${readTime} min read</span>
-                <span style="text-transform: capitalize;">${difficulty}</span>
+            <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; font-size: 0.875rem; color: #6b7280; padding: 0.75rem; background: #f9fafb; border-radius: 0.5rem;">
+                <span style="display: flex; align-items: center; gap: 0.25rem;">👤 ${author}</span>
+                <span style="display: flex; align-items: center; gap: 0.25rem;">⏱️ ${readTime} min read</span>
+                <span style="display: flex; align-items: center; gap: 0.25rem; text-transform: capitalize;">📊 ${difficulty}</span>
             </div>
             
-            <div style="line-height: 1.6; color: #374151; white-space: pre-wrap;">${content}</div>
+            <div style="line-height: 1.7; color: #374151; font-size: 1rem;">${content.replace(/\n/g, '<br>')}</div>
         </div>
     `;
     
@@ -115,6 +116,16 @@ function viewGuide(id, title, content, imagePath, author, readTime, difficulty) 
             document.body.style.overflow = 'auto';
         }
     });
+    
+    // ESC key to close
+    const escHandler = function(e) {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.body.style.overflow = 'auto';
+            document.removeEventListener('keydown', escHandler);
+        }
+    };
+    document.addEventListener('keydown', escHandler);
 }
 </script>
 

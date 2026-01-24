@@ -2,6 +2,7 @@
 $page_title = "Guides";
 include '../includes/header.php';
 require_once '../config/db.php';
+require_once '../includes/image_helper.php';
 
 $db = getDB();
 
@@ -34,7 +35,15 @@ function getInitials($name) {
             <div class="grid grid-3">
                 <?php foreach ($featuredGuides as $guide): ?>
                     <div class="guide-card">
-                        <div class="guide-image">📖</div>
+                        <div class="guide-image">
+                            <?php 
+                            $imageSrc = getImageSrc($guide['image_path']);
+                            if ($imageSrc): ?>
+                                <img src="<?php echo htmlspecialchars($imageSrc); ?>" alt="<?php echo htmlspecialchars($guide['title']); ?>" style="width: 100%; height: 200px; object-fit: cover; border-radius: 0.5rem;">
+                            <?php else: ?>
+                                📖
+                            <?php endif; ?>
+                        </div>
                         <div class="guide-content">
                             <span class="guide-category">Nutrition</span>
                             <h3 class="guide-title"><?php echo htmlspecialchars($guide['title']); ?></h3>

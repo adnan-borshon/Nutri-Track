@@ -58,9 +58,19 @@ include 'header.php';
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
                             <?php foreach ($upcoming as $appointment): ?>
                                 <div class="card" style="display: flex; align-items: center; gap: 1rem; padding: 1rem;" data-appointment-id="<?php echo $appointment['id']; ?>">
-                                    <div class="team-avatar" style="width: 3rem; height: 3rem;">
-                                        <?php echo strtoupper(substr($appointment['nutritionist_name'], 0, 1) . (strpos($appointment['nutritionist_name'], ' ') ? substr($appointment['nutritionist_name'], strpos($appointment['nutritionist_name'], ' ') + 1, 1) : '')); ?>
-                                    </div>
+                                    <?php 
+                                    // Get nutritionist data for avatar
+                                    $stmt = $db->prepare("SELECT profile_image, name FROM users WHERE id = ?");
+                                    $stmt->execute([$appointment['nutritionist_id']]);
+                                    $nutritionist = $stmt->fetch();
+                                    ?>
+                                    <?php if (!empty($nutritionist['profile_image']) && file_exists(__DIR__ . '/../' . $nutritionist['profile_image'])): ?>
+                                        <img src="../<?php echo htmlspecialchars($nutritionist['profile_image']); ?>" alt="Nutritionist" style="width: 3rem; height: 3rem; border-radius: 50%; object-fit: cover;">
+                                    <?php else: ?>
+                                        <div class="team-avatar" style="width: 3rem; height: 3rem;">
+                                            <?php echo strtoupper(substr($appointment['nutritionist_name'], 0, 1) . (strpos($appointment['nutritionist_name'], ' ') ? substr($appointment['nutritionist_name'], strpos($appointment['nutritionist_name'], ' ') + 1, 1) : '')); ?>
+                                        </div>
+                                    <?php endif; ?>
                                     <div style="flex: 1;">
                                         <p class="card-title"><?php echo htmlspecialchars($appointment['nutritionist_name']); ?></p>
                                         <div style="display: flex; align-items: center; gap: 1rem; font-size: 0.875rem; color: #6b7280;">
@@ -98,9 +108,19 @@ include 'header.php';
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
                             <?php foreach ($past as $appointment): ?>
                                 <div class="card" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; opacity: 0.75;">
-                                    <div class="team-avatar" style="width: 3rem; height: 3rem;">
-                                        <?php echo strtoupper(substr($appointment['nutritionist_name'], 0, 1) . (strpos($appointment['nutritionist_name'], ' ') ? substr($appointment['nutritionist_name'], strpos($appointment['nutritionist_name'], ' ') + 1, 1) : '')); ?>
-                                    </div>
+                                    <?php 
+                                    // Get nutritionist data for avatar
+                                    $stmt = $db->prepare("SELECT profile_image, name FROM users WHERE id = ?");
+                                    $stmt->execute([$appointment['nutritionist_id']]);
+                                    $nutritionist = $stmt->fetch();
+                                    ?>
+                                    <?php if (!empty($nutritionist['profile_image']) && file_exists(__DIR__ . '/../' . $nutritionist['profile_image'])): ?>
+                                        <img src="../<?php echo htmlspecialchars($nutritionist['profile_image']); ?>" alt="Nutritionist" style="width: 3rem; height: 3rem; border-radius: 50%; object-fit: cover;">
+                                    <?php else: ?>
+                                        <div class="team-avatar" style="width: 3rem; height: 3rem;">
+                                            <?php echo strtoupper(substr($appointment['nutritionist_name'], 0, 1) . (strpos($appointment['nutritionist_name'], ' ') ? substr($appointment['nutritionist_name'], strpos($appointment['nutritionist_name'], ' ') + 1, 1) : '')); ?>
+                                        </div>
+                                    <?php endif; ?>
                                     <div style="flex: 1;">
                                         <p class="card-title"><?php echo htmlspecialchars($appointment['nutritionist_name']); ?></p>
                                         <div style="display: flex; align-items: center; gap: 1rem; font-size: 0.875rem; color: #6b7280;">

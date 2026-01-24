@@ -2,6 +2,7 @@
 require_once '../includes/session.php';
 checkAuth('nutritionist');
 $currentUser = getCurrentUser();
+require_once '../includes/image_helper.php';
 
 $db = getDB();
 
@@ -22,9 +23,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             exit;
         }
         
+        $imagePath = null;
+        $imageUrl = trim($_POST['image_url'] ?? '');
+        
+        // Check if URL is provided first
+        if (!empty($imageUrl) && filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+            $imagePath = $imageUrl;
+        } elseif (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = '../uploads/recipes/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            
+            $fileExtension = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+            
+            if (in_array($fileExtension, $allowedExtensions)) {
+                $fileName = uniqid() . '.' . $fileExtension;
+                $uploadPath = $uploadDir . $fileName;
+                
+                if (move_uploaded_file($_FILES['image']['tmp_name'], $uploadPath)) {
+                    $imagePath = 'uploads/recipes/' . $fileName;
+                }
+            }
+        }
+        
         try {
-            $stmt = $db->prepare("INSERT INTO meal_suggestions (nutritionist_id, title, description, meal_type, calories, prep_time, tags) VALUES (?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$currentUser['id'], $title, $description, $mealType, $calories, $prepTime, $tags]);
+            $stmt = $db->prepare("INSERT INTO meal_suggestions (nutritionist_id, title, description, meal_type, calories, prep_time, tags, image_path) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$currentUser['id'], $title, $description, $mealType, $calories, $prepTime, $tags, $imagePath]);
             echo json_encode(['success' => true, 'message' => 'Suggestion added successfully']);
         } catch (PDOException $e) {
             error_log("Add suggestion error: " . $e->getMessage());
@@ -79,9 +105,15 @@ include 'header.php';
     <?php foreach ($suggestions as $s): ?>
     <div class="recipe-card" data-id="<?php echo $s['id']; ?>">
         <div class="recipe-image">
+            <?php 
+            $imageSrc = getImageSrc($s['image_path']);
+            if ($imageSrc): ?>
+                <img src="<?php echo htmlspecialchars($imageSrc); ?>" alt="<?php echo htmlspecialchars($s['title']); ?>" style="width: 100%; height: 150px; object-fit: cover; border-radius: 0.5rem;">
+            <?php else: ?>
 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:48px;height:48px;stroke-width:1.5;color:#278b63;">
   <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-3.97-3.97a.75.75 0 0 0-1.06 0L12 16.94l-3.97-3.97a.75.75 0 0 0-1.06 0L3 16.94V21a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-4.06Z" />
 </svg>
+            <?php endif; ?>
         </div>
         <div class="recipe-content">
             <span class="recipe-category"><?php echo ucfirst($s['meal_type']); ?></span>
@@ -128,10 +160,17 @@ function showAddSuggestionModal() {
                 <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Add Meal Suggestion</h3>
                 <button class="close-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">&times;</button>
             </div>
-            <form id="addSuggestionForm">
+            <form id="addSuggestionForm" enctype="multipart/form-data">
                 <div style="margin-bottom: 1rem;">
                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Meal Name</label>
                     <input type="text" name="title" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Recipe Image</label>
+                    <input type="file" name="image" accept="image/*" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; margin-bottom: 0.5rem;">
+                    <p style="font-size: 0.75rem; color: #6b7280; margin: 0.5rem 0;">OR</p>
+                    <input type="url" name="image_url" placeholder="https://example.com/image.jpg" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                    <p style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">Upload a file or enter an image URL</p>
                 </div>
                 <div style="margin-bottom: 1rem;">
                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Category</label>

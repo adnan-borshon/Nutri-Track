@@ -3,6 +3,7 @@ $page_title = "Recipes";
 require_once '../includes/session.php';
 checkAuth('user');
 $user = getCurrentUser();
+require_once '../includes/image_helper.php';
 
 $db = getDB();
 
@@ -38,7 +39,8 @@ foreach ($suggestions as $s) {
         'ingredients' => $s['ingredients'] ? explode("\n", $s['ingredients']) : [],
         'instructions' => $s['instructions'] ? explode("\n", $s['instructions']) : [],
         'tags' => $s['tags'],
-        'author' => $s['author_name']
+        'author' => $s['author_name'],
+        'image_path' => $s['image_path']
     ];
 }
 
@@ -89,9 +91,15 @@ include 'header.php';
     <?php foreach ($recipes as $recipe): ?>
         <div class="recipe-card" onclick="openRecipeModal(<?php echo htmlspecialchars(json_encode($recipe)); ?>)">
             <div class="recipe-image">
+                <?php 
+                $imageSrc = getImageSrc($recipe['image_path'] ?? '');
+                if ($imageSrc): ?>
+                    <img src="<?php echo htmlspecialchars($imageSrc); ?>" alt="<?php echo htmlspecialchars($recipe['title']); ?>" style="width: 100%; height: 150px; object-fit: cover; border-radius: 0.5rem;">
+                <?php else: ?>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:32px;height:32px;stroke-width:1.5;color:#278b63;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-3.97-3.97a.75.75 0 0 0-1.06 0L12 16.94l-3.97-3.97a.75.75 0 0 0-1.06 0L3 16.94V21a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-4.06Z" />
                 </svg>
+                <?php endif; ?>
             </div>
             <div class="recipe-content">
                 <h3 class="recipe-title"><?php echo $recipe['title']; ?></h3>
@@ -139,8 +147,12 @@ include 'header.php';
 
 <script>
 function openRecipeModal(recipe) {
+    const imageSrc = recipe.image_path ? (recipe.image_path.startsWith('http') ? recipe.image_path : `../${recipe.image_path}`) : null;
+    const imageHtml = imageSrc ? `<img src="${imageSrc}" alt="${recipe.title}" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 0.5rem; margin-bottom: 1.5rem;">` : '';
+    
     document.getElementById('modalTitle').textContent = recipe.title;
     document.getElementById('modalContent').innerHTML = `
+        ${imageHtml}
         <div style="margin-bottom: 1.5rem;">
             <div class="recipe-meta" style="margin-bottom: 1rem;">
                 <span><strong>${recipe.calories}</strong> calories</span>

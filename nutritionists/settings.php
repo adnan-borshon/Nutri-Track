@@ -1,4 +1,5 @@
 <?php
+$page_title = "Settings";
 require_once '../includes/session.php';
 checkAuth('nutritionist');
 $user = getCurrentUser();
@@ -9,11 +10,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $db = getDB();
     
     if ($_POST['action'] === 'update_profile') {
+        // Debug: Log received POST data
+        error_log('POST data received: ' . print_r($_POST, true));
+        error_log('FILES data received: ' . print_r($_FILES, true));
+        
         $name = trim($_POST['name'] ?? '');
         $email = trim($_POST['email'] ?? '');
         $phone = trim($_POST['phone'] ?? '');
         $specialty = trim($_POST['specialty'] ?? '');
         $bio = trim($_POST['bio'] ?? '');
+        
+        // Debug: Log processed values
+        error_log("Processed values - Name: '$name', Email: '$email'");
         
         if (empty($name) || empty($email)) {
             echo json_encode(['success' => false, 'message' => 'Name and email are required']);
@@ -27,8 +35,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             exit;
         }
         
-        $stmt = $db->prepare("UPDATE users SET name = ?, email = ?, phone = ?, specialty = ?, bio = ? WHERE id = ?");
-        $stmt->execute([$name, $email, $phone, $specialty, $bio, $user['id']]);
+        // Handle profile image upload
+        $imagePath = $user['profile_image']; // Keep existing image by default
+        if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = __DIR__ . '/../uploads/profiles/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            
+            $fileExtension = strtolower(pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+            
+            if (in_array($fileExtension, $allowedExtensions)) {
+                $fileName = 'profile_' . $user['id'] . '_' . uniqid() . '.' . $fileExtension;
+                $uploadPath = $uploadDir . $fileName;
+                
+                if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $uploadPath)) {
+                    // Delete old profile image if exists
+                    if ($user['profile_image'] && file_exists(__DIR__ . '/../' . $user['profile_image'])) {
+                        unlink(__DIR__ . '/../' . $user['profile_image']);
+                    }
+                    $imagePath = 'uploads/profiles/' . $fileName;
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Failed to upload image']);
+                    exit;
+                }
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Invalid file type. Only JPG, JPEG, PNG, and GIF allowed']);
+                exit;
+            }
+        }
+        
+        $stmt = $db->prepare("UPDATE users SET name = ?, email = ?, phone = ?, specialty = ?, bio = ?, profile_image = ? WHERE id = ?");
+        $stmt->execute([$name, $email, $phone, $specialty, $bio, $imagePath, $user['id']]);
         $_SESSION['user_name'] = $name;
         
         echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
@@ -80,35 +119,49 @@ include 'header.php';
             <h3 class="card-title">Profile Information</h3>
         </div>
         <div class="card-content">
-            <div class="form-grid">
+            <form id="profileForm" enctype="multipart/form-data" class="form-grid">
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <div style="position: relative; display: inline-block;">
+                        <?php if (!empty($user['profile_image']) && file_exists(__DIR__ . '/../' . $user['profile_image'])): ?>
+                            <img id="profilePreview" src="../<?php echo htmlspecialchars($user['profile_image']); ?>" alt="Profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #278b63;">
+                        <?php else: ?>
+                            <div id="profilePreview" style="width: 80px; height: 80px; border-radius: 50%; background: #278b63; color: white; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; border: 3px solid #278b63;">
+                                <?php echo strtoupper(substr($user['name'], 0, 1)); ?>
+                            </div>
+                        <?php endif; ?>
+                        <label for="profileImageInput" style="position: absolute; bottom: -5px; right: -5px; background: #278b63; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.75rem;">📷</label>
+                        <input type="file" id="profileImageInput" name="profile_image" accept="image/*" style="display: none;">
+                    </div>
+                    <p style="font-size: 0.75rem; color: #6b7280; margin-top: 0.5rem;">Click camera icon to change photo</p>
+                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Full Name</label>
-                        <input type="text" id="profileName" class="form-input" value="<?php echo htmlspecialchars($user['name']); ?>">
+                        <input type="text" id="profileName" name="name" class="form-input" value="<?php echo htmlspecialchars($user['name']); ?>">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Email</label>
-                        <input type="email" id="profileEmail" class="form-input" value="<?php echo htmlspecialchars($user['email']); ?>">
+                        <input type="email" id="profileEmail" name="email" class="form-input" value="<?php echo htmlspecialchars($user['email']); ?>">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Specialty</label>
-                        <input type="text" id="profileSpecialty" class="form-input" value="<?php echo htmlspecialchars($user['specialty'] ?? ''); ?>" placeholder="e.g., Weight Management">
+                        <input type="text" id="profileSpecialty" name="specialty" class="form-input" value="<?php echo htmlspecialchars($user['specialty'] ?? ''); ?>" placeholder="e.g., Weight Management">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Phone</label>
-                        <input type="tel" id="profilePhone" class="form-input" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>">
+                        <input type="tel" id="profilePhone" name="phone" class="form-input" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>">
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Bio</label>
-                    <textarea id="profileBio" class="form-textarea" placeholder="Tell users about yourself..."><?php echo htmlspecialchars($user['bio'] ?? ''); ?></textarea>
+                    <textarea id="profileBio" name="bio" class="form-textarea" placeholder="Tell users about yourself..."><?php echo htmlspecialchars($user['bio'] ?? ''); ?></textarea>
                 </div>
                 <div class="form-actions">
-                    <button class="btn btn-primary" id="updateProfileBtn">Update Profile</button>
+                    <button type="submit" class="btn btn-primary" id="updateProfileBtn">Update Profile</button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
 
@@ -141,34 +194,39 @@ include 'header.php';
 </div>
 
 <script>
-// Update Profile
-document.getElementById('updateProfileBtn').addEventListener('click', async function(e) {
-    e.preventDefault();
-    const name = document.getElementById('profileName').value.trim();
-    const email = document.getElementById('profileEmail').value.trim();
-    const phone = document.getElementById('profilePhone').value.trim();
-    const specialty = document.getElementById('profileSpecialty').value.trim();
-    const bio = document.getElementById('profileBio').value.trim();
-    
-    if (!name || !email) {
-        showNotification('Name and email are required', 'error');
-        return;
+// Profile image preview
+document.getElementById('profileImageInput').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('profilePreview');
+            preview.innerHTML = `<img src="${e.target.result}" alt="Profile" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+        };
+        reader.readAsDataURL(file);
     }
-    
-    const formData = new FormData();
+});
+
+// Update Profile
+document.getElementById('profileForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    console.log('Form submitted');
+    const formData = new FormData(this);
     formData.append('action', 'update_profile');
-    formData.append('name', name);
-    formData.append('email', email);
-    formData.append('phone', phone);
-    formData.append('specialty', specialty);
-    formData.append('bio', bio);
+    
+    // Debug: log form data
+    for (let [key, value] of formData.entries()) {
+        console.log(key, value);
+    }
     
     try {
         const response = await fetch('settings.php', { method: 'POST', body: formData });
         const data = await response.json();
+        console.log('Response:', data);
         showNotification(data.message, data.success ? 'success' : 'error');
         if (data.success) setTimeout(() => location.reload(), 1000);
     } catch (error) {
+        console.error('Error:', error);
         showNotification('Failed to update profile', 'error');
     }
 });

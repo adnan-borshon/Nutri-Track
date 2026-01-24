@@ -90,15 +90,17 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Log a Meal button
-        document.querySelectorAll('a, button').forEach(btn => {
-            if (btn.textContent.includes('Log a Meal')) {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    showMealModal();
-                });
-            }
-        });
+        // Log a Meal button - Skip if on dashboard.php (let it redirect normally)
+        if (!window.location.pathname.includes('dashboard.php')) {
+            document.querySelectorAll('a, button').forEach(btn => {
+                if (btn.textContent.includes('Log a Meal')) {
+                    btn.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        showMealModal();
+                    });
+                }
+            });
+        }
 
         // Add meal buttons (+ icons in meal cards) - Skip if on meals.php
         if (!window.location.pathname.includes('meals.php')) {
@@ -127,12 +129,14 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
 
-        // Book Appointment button
-        document.querySelectorAll('button').forEach(btn => {
-            if (btn.textContent.includes('Book Appointment')) {
-                btn.addEventListener('click', showBookAppointmentModal);
-            }
-        });
+        // Book Appointment button - Skip if on appointments.php
+        if (!window.location.pathname.includes('appointments.php')) {
+            document.querySelectorAll('button').forEach(btn => {
+                if (btn.textContent.includes('Book Appointment')) {
+                    btn.addEventListener('click', showBookAppointmentModal);
+                }
+            });
+        }
 
         // Join appointment buttons
         document.querySelectorAll('button').forEach(btn => {
@@ -381,52 +385,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showModal('addToMealModal');
     }
 
-    function showBookAppointmentModal() {
-        const modalContent = `
-            <form id="bookAppointmentForm" class="form">
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Nutritionist</label>
-                    <select class="admin-form-select" name="nutritionist" required>
-                        <option value="">Select Nutritionist</option>
-                        <option value="dr_smith">Dr. Sarah Smith</option>
-                        <option value="dr_chen">Dr. Michael Chen</option>
-                        <option value="dr_wilson">Dr. Emily Wilson</option>
-                    </select>
-                </div>
-                <div class="admin-grid admin-grid-2">
-                    <div class="admin-form-group">
-                        <label class="admin-form-label">Date</label>
-                        <input type="date" class="admin-form-input" name="date" required>
-                    </div>
-                    <div class="admin-form-group">
-                        <label class="admin-form-label">Time</label>
-                        <select class="admin-form-select" name="time" required>
-                            <option value="">Select Time</option>
-                            <option value="09:00">9:00 AM</option>
-                            <option value="10:00">10:00 AM</option>
-                            <option value="11:00">11:00 AM</option>
-                            <option value="14:00">2:00 PM</option>
-                            <option value="15:00">3:00 PM</option>
-                            <option value="16:00">4:00 PM</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Reason for Visit</label>
-                    <textarea class="admin-form-textarea" name="reason" rows="3" placeholder="Brief description of what you'd like to discuss..."></textarea>
-                </div>
-            </form>
-        `;
-        
-        const actions = `
-            <button class="btn btn-secondary" onclick="closeModal('bookAppointmentModal')">Cancel</button>
-            <button class="btn btn-primary" onclick="submitBookAppointment()">Book Appointment</button>
-        `;
 
-        const modalHTML = createModal('bookAppointmentModal', 'Book Appointment', modalContent, actions);
-        document.getElementById('modal-container').innerHTML = modalHTML;
-        showModal('bookAppointmentModal');
-    }
 
     function showChangePasswordModal() {
         const modalContent = `
@@ -515,15 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
         closeModal('addToMealModal');
     };
 
-    window.submitBookAppointment = function() {
-        const form = document.getElementById('bookAppointmentForm');
-        const formData = new FormData(form);
-        
-        showNotification('Appointment booked successfully!', 'success');
-        closeModal('bookAppointmentModal');
-        
-        console.log('Appointment data:', Object.fromEntries(formData));
-    };
+
 
     window.submitChangePassword = function() {
         const form = document.getElementById('changePasswordForm');
