@@ -134,24 +134,88 @@ function updatePassword() {
         return;
     }
     
-    showNotification('Password updated successfully!', 'success');
-    passwordInputs.forEach(input => input.value = '');
+    const formData = new FormData();
+    formData.append('action', 'update_password');
+    formData.append('current_password', currentPassword);
+    formData.append('new_password', newPassword);
+    formData.append('confirm_password', confirmPassword);
+    
+    fetch('admin_handler.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            passwordInputs.forEach(input => input.value = '');
+        } else {
+            showNotification(data.message, 'error');
+        }
+    });
 }
 
 function generateReport() {
-    showNotification('Report generated successfully!', 'success');
+    const formData = new FormData();
+    formData.append('action', 'generate_report');
+    
+    fetch('admin_handler.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(data.message, 'success');
+            if (data.data) {
+                console.log('Report Data:', data.data);
+            }
+        } else {
+            showNotification(data.message, 'error');
+        }
+    });
 }
 
 function backupDatabase() {
-    showNotification('Database backup completed!', 'success');
+    const formData = new FormData();
+    formData.append('action', 'backup_database');
+    
+    fetch('admin_handler.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        showNotification(data.message, data.success ? 'success' : 'error');
+    });
 }
 
 function clearCache() {
-    showNotification('Cache cleared successfully!', 'success');
+    const formData = new FormData();
+    formData.append('action', 'clear_cache');
+    
+    fetch('admin_handler.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        showNotification(data.message, data.success ? 'success' : 'error');
+    });
 }
 
 function toggleMaintenanceMode() {
-    showNotification('Maintenance mode toggled!', 'info');
+    const formData = new FormData();
+    formData.append('action', 'toggle_maintenance');
+    
+    fetch('admin_handler.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        showNotification(data.message, data.success ? 'success' : 'error');
+    });
 }
 
 function showNotifications() {

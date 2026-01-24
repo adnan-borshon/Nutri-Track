@@ -77,7 +77,7 @@ $user = getCurrentUser();
             </nav>
             
             <div class="sidebar-footer">
-                <div class="user-info">
+                <div class="user-info" onclick="showProfilePopup()" style="cursor: pointer;">
                     <div class="user-avatar"><?php echo getUserInitials($user['name']); ?></div>
                     <div>
                         <div class="team-name"><?php echo $user['name']; ?></div>
@@ -104,7 +104,7 @@ $user = getCurrentUser();
                         </button>
                         <div class="notification-dot"></div>
                     </div>
-                    <div class="user-info">
+                    <div class="user-info" onclick="showProfilePopup()" style="cursor: pointer;">
                         <div class="user-avatar"><?php echo getUserInitials($user['name']); ?></div>
                         <span class="team-role"><?php echo $user['name']; ?></span>
                     </div>
@@ -112,3 +112,99 @@ $user = getCurrentUser();
             </header>
             
             <main class="content-area">
+
+<!-- Profile Popup Modal -->
+<div id="profilePopup" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 0.75rem; padding: 2rem; max-width: 400px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="font-size: 1.25rem; font-weight: 600; margin: 0; color: #111827;">Profile Information</h3>
+            <button onclick="closeProfilePopup()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 0.25rem; border-radius: 0.375rem; width: 2rem; height: 2rem; display: flex; align-items: center; justify-content: center;" onmouseover="this.style.backgroundColor='#f3f4f6'" onmouseout="this.style.backgroundColor='transparent'">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+        
+        <div style="text-align: center; margin-bottom: 1.5rem;">
+            <div style="width: 4rem; height: 4rem; background: linear-gradient(135deg, #278b63, #16a34a); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.5rem; margin: 0 auto 1rem; box-shadow: 0 4px 8px rgba(39, 139, 99, 0.3);"><?php echo getUserInitials($user['name']); ?></div>
+            <h4 style="font-size: 1.125rem; font-weight: 600; margin: 0 0 0.25rem 0; color: #111827;"><?php echo $user['name']; ?></h4>
+            <p style="color: #278b63; font-size: 0.875rem; font-weight: 500; margin: 0;">User</p>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 0.5rem;">
+                <div style="width: 2rem; height: 2rem; background: #dcfce7; color: #278b63; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div>
+                    <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">Full Name</p>
+                    <p style="font-size: 0.875rem; font-weight: 500; margin: 0; color: #111827;"><?php echo $user['name']; ?></p>
+                </div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 0.5rem;">
+                <div style="width: 2rem; height: 2rem; background: #dcfce7; color: #278b63; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                        <polyline points="22,6 12,13 2,6"></polyline>
+                    </svg>
+                </div>
+                <div>
+                    <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">Email Address</p>
+                    <p style="font-size: 0.875rem; font-weight: 500; margin: 0; color: #111827;"><?php echo $user['email']; ?></p>
+                </div>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem; background: #f9fafb; border-radius: 0.5rem;">
+                <div style="width: 2rem; height: 2rem; background: #dcfce7; color: #278b63; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="m22 2-5 10-5-4-5 10"></path>
+                    </svg>
+                </div>
+                <div>
+                    <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">Account Type</p>
+                    <p style="font-size: 0.875rem; font-weight: 500; margin: 0; color: #111827;">User Account</p>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; display: flex; gap: 0.75rem;">
+            <a href="settings.php" style="flex: 1; padding: 0.5rem 1rem; background: #278b63; color: white; text-decoration: none; border-radius: 0.375rem; text-align: center; font-size: 0.875rem; font-weight: 500;">Edit Profile</a>
+            <button onclick="closeProfilePopup()" style="flex: 1; padding: 0.5rem 1rem; background: #f3f4f6; color: #374151; border: none; border-radius: 0.375rem; font-size: 0.875rem; font-weight: 500; cursor: pointer;">Close</button>
+        </div>
+    </div>
+</div>
+
+<script>
+function showProfilePopup() {
+    const popup = document.getElementById('profilePopup');
+    popup.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeProfilePopup() {
+    const popup = document.getElementById('profilePopup');
+    popup.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+// Close popup when clicking outside
+document.getElementById('profilePopup').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeProfilePopup();
+    }
+});
+
+// Close popup with Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeProfilePopup();
+    }
+});
+</script>

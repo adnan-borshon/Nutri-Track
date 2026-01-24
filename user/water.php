@@ -140,11 +140,22 @@ function updateWaterDisplay() {
     const circumference = 2 * Math.PI * 70;
     const offset = circumference * (1 - currentGlasses / target);
     
+    // Update circle progress
     document.querySelector('circle[stroke="#06b6d4"]').style.strokeDashoffset = offset;
-    document.querySelector('.stat-value').textContent = currentGlasses;
-    document.querySelectorAll('.stat-value')[1].textContent = currentGlasses * 250;
-    document.querySelectorAll('.stat-value')[2].textContent = percentage + '%';
     
+    // Update center display
+    document.querySelector('.stat-value').textContent = currentGlasses;
+    
+    // Update title
+    document.querySelector('.card-title').textContent = `${currentGlasses} of ${target} glasses`;
+    
+    // Update stats in the right panel
+    const statCards = document.querySelectorAll('.stat-card .stat-value');
+    statCards[0].textContent = currentGlasses; // Glasses
+    statCards[1].textContent = currentGlasses * 250; // ml consumed
+    statCards[2].textContent = percentage + '%'; // percentage
+    
+    // Update description
     const description = document.querySelector('.card-description');
     if (currentGlasses >= target) {
         description.textContent = "Great job! You've reached your goal!";
@@ -161,6 +172,48 @@ document.getElementById('addWaterBtn').addEventListener('click', function() {
 });
 
 document.getElementById('removeWaterBtn').addEventListener('click', function() {
+    if (currentGlasses > 0) {
+        currentGlasses--;
+        updateWaterDisplay();
+        showNotification('Removed 1 glass of water!', 'info');
+    }
+});
+
+document.querySelectorAll('.quick-add').forEach(button => {
+    button.addEventListener('click', function() {
+        const amount = parseInt(this.dataset.amount);
+        currentGlasses += amount;
+        updateWaterDisplay();
+        showNotification(`Added ${amount} glass${amount !== 1 ? 'es' : ''} of water!`, 'success');
+    });
+});
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        border-radius: 0.375rem;
+        color: white;
+        font-weight: 500;
+        z-index: 1000;
+        max-width: 300px;
+    `;
+    
+    const colors = {
+        success: '#278b63',
+        error: '#dc2626',
+        info: '#3b82f6'
+    };
+    
+    notification.style.backgroundColor = colors[type] || colors.info;
+    notification.textContent = message;
+    
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}stener('click', function() {
     if (currentGlasses > 0) {
         currentGlasses--;
         updateWaterDisplay();

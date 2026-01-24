@@ -1,4 +1,28 @@
 // Admin Panel JavaScript Functionality
+
+// Profile Popup Functions - Available immediately
+window.showProfilePopup = function() {
+    console.log('showProfilePopup called');
+    const popup = document.getElementById('profilePopup');
+    if (popup) {
+        popup.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+        console.log('Profile popup shown');
+    } else {
+        console.error('Profile popup element not found');
+    }
+};
+
+window.closeProfilePopup = function() {
+    console.log('closeProfilePopup called');
+    const popup = document.getElementById('profilePopup');
+    if (popup) {
+        popup.style.display = 'none';
+        document.body.style.overflow = 'auto';
+        console.log('Profile popup closed');
+    }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     
     // Modal Management
@@ -1045,6 +1069,19 @@ document.addEventListener('DOMContentLoaded', function() {
             if (openModal) {
                 closeModal(openModal.id);
             }
+            // Also close profile popup
+            const profilePopup = document.getElementById('profilePopup');
+            if (profilePopup && profilePopup.style.display === 'flex') {
+                closeProfilePopup();
+            }
+        }
+    });
+
+    // Close profile popup when clicking outside
+    document.addEventListener('click', function(e) {
+        const profilePopup = document.getElementById('profilePopup');
+        if (e.target === profilePopup) {
+            closeProfilePopup();
         }
     });
 

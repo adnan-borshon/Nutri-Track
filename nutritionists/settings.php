@@ -6,8 +6,8 @@ include 'header.php';
 
 <div class="space-y-6">
     <div>
-        <h1 class="text-3xl font-bold">Settings</h1>
-        <p class="text-muted-foreground">Manage your profile and preferences</p>
+        <h1 class="text-3xl font-bold">Profile</h1>
+        <p class="text-muted-foreground">Manage your profile information</p>
     </div>
 
     <div class="card">
@@ -46,45 +46,6 @@ include 'header.php';
                 </div>
                 <div class="form-actions">
                     <button class="btn btn-primary" onclick="updateProfile()">Update Profile</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Notification Preferences</h3>
-        </div>
-        <div class="card-content">
-            <div class="settings-list">
-                <div class="settings-item">
-                    <div class="settings-info">
-                        <h4 class="settings-item-title">Email Notifications</h4>
-                        <p class="settings-item-description">Receive email notifications for new messages</p>
-                    </div>
-                    <div class="toggle-switch active" onclick="toggleSetting(this)">
-                        <div class="toggle-handle"></div>
-                    </div>
-                </div>
-                
-                <div class="settings-item">
-                    <div class="settings-info">
-                        <h4 class="settings-item-title">SMS Notifications</h4>
-                        <p class="settings-item-description">Get text messages for urgent updates</p>
-                    </div>
-                    <div class="toggle-switch" onclick="toggleSetting(this)">
-                        <div class="toggle-handle"></div>
-                    </div>
-                </div>
-                
-                <div class="settings-item">
-                    <div class="settings-info">
-                        <h4 class="settings-item-title">Push Notifications</h4>
-                        <p class="settings-item-description">Receive push notifications on your device</p>
-                    </div>
-                    <div class="toggle-switch active" onclick="toggleSetting(this)">
-                        <div class="toggle-handle"></div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -163,15 +124,6 @@ function updatePassword() {
     
     showNotification('Password updated successfully!', 'success');
     passwordInputs.forEach(input => input.value = '');
-}
-
-function toggleSetting(toggle) {
-    toggle.classList.toggle('active');
-    
-    const settingName = toggle.closest('.settings-item').querySelector('h4').textContent;
-    const isActive = toggle.classList.contains('active');
-    
-    showNotification(`${settingName} ${isActive ? 'enabled' : 'disabled'}`, 'info');
 }
 
 function showNotification(message, type = 'info') {

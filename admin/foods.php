@@ -19,8 +19,8 @@ include 'header.php';
 <div class="card">
     <div class="card-content">
         <div class="form-row">
-            <input type="text" class="form-input" placeholder="Search foods...">
-            <select class="form-input">
+            <input type="text" class="form-input" placeholder="Search foods..." onkeyup="searchFoods(this.value)">
+            <select class="form-input" onchange="filterFoods(this.value)">
                 <option value="all">All Categories</option>
                 <option value="fruits">Fruits</option>
                 <option value="vegetables">Vegetables</option>
@@ -61,12 +61,12 @@ include 'header.php';
                     <td>14g</td>
                     <td>0.2g</td>
                     <td>
-                        <div class="admin-action-buttons">
-                            <button class="btn btn-outline">
+                        <div class="action-buttons">
+                            <button class="btn btn-outline btn-sm" onclick="editFood(this)">
 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg> Edit
                             </button>
-                            <button class="btn btn-secondary">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg> Delete
+                            <button class="btn btn-outline btn-sm" onclick="deleteFood(this)">
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash" style="vertical-align:middle;margin-right:4px;color:#dc2626;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg> Delete
                             </button>
                         </div>
                     </td>
@@ -90,12 +90,12 @@ include 'header.php';
                     <td>10g</td>
                     <td>0.2g</td>
                     <td>
-                        <div class="admin-action-buttons">
-                            <button class="btn btn-outline">
+                        <div class="action-buttons">
+                            <button class="btn btn-outline btn-sm" onclick="editFood(this)">
 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg> Edit
                             </button>
-                            <button class="btn btn-secondary">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg> Delete
+                            <button class="btn btn-outline btn-sm" onclick="deleteFood(this)">
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash" style="vertical-align:middle;margin-right:4px;color:#dc2626;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg> Delete
                             </button>
                         </div>
                     </td>
@@ -119,12 +119,12 @@ include 'header.php';
                     <td>0g</td>
                     <td>3.6g</td>
                     <td>
-                        <div class="admin-action-buttons">
-                            <button class="btn btn-outline">
+                        <div class="action-buttons">
+                            <button class="btn btn-outline btn-sm" onclick="editFood(this)">
 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg> Edit
                             </button>
-                            <button class="btn btn-secondary">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg> Delete
+                            <button class="btn btn-outline btn-sm" onclick="deleteFood(this)">
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash" style="vertical-align:middle;margin-right:4px;color:#dc2626;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg> Delete
                             </button>
                         </div>
                     </td>
@@ -148,12 +148,12 @@ include 'header.php';
                     <td>23g</td>
                     <td>0.9g</td>
                     <td>
-                        <div class="admin-action-buttons">
-                            <button class="btn btn-outline">
+                        <div class="action-buttons">
+                            <button class="btn btn-outline btn-sm" onclick="editFood(this)">
 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg> Edit
                             </button>
-                            <button class="btn btn-secondary">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg> Delete
+                            <button class="btn btn-outline btn-sm" onclick="deleteFood(this)">
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash" style="vertical-align:middle;margin-right:4px;color:#dc2626;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg> Delete
                             </button>
                         </div>
                     </td>
@@ -177,12 +177,12 @@ include 'header.php';
                     <td>4.8g</td>
                     <td>3.3g</td>
                     <td>
-                        <div class="admin-action-buttons">
-                            <button class="btn btn-outline" onclick="editFood(this)">
+                        <div class="action-buttons">
+                            <button class="btn btn-outline btn-sm" onclick="editFood(this)">
 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg> Edit
                             </button>
-                            <button class="btn btn-secondary" onclick="deleteFood(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg> Delete
+                            <button class="btn btn-outline btn-sm" onclick="deleteFood(this)">
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash" style="vertical-align:middle;margin-right:4px;color:#dc2626;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg> Delete
                             </button>
                         </div>
                     </td>
@@ -193,21 +193,213 @@ include 'header.php';
 </div>
 
 <script>
+function searchFoods(query) {
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const foodName = row.querySelector('h4').textContent.toLowerCase();
+        const isVisible = foodName.includes(query.toLowerCase());
+        row.style.display = isVisible ? '' : 'none';
+    });
+}
+
+function filterFoods(category) {
+    const rows = document.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+        const foodCategory = row.querySelector('.status-badge').textContent.toLowerCase();
+        const isVisible = category === 'all' || foodCategory === category.toLowerCase();
+        row.style.display = isVisible ? '' : 'none';
+    });
+}
+
 function showAddFoodModal() {
-    showNotification('Add Food feature coming soon!', 'info');
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;';
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 0.75rem; padding: 2rem; max-width: 500px; width: 90%;">
+            <h3 style="margin: 0 0 1rem 0;">Add New Food Item</h3>
+            <form id="addFoodForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Name:</label>
+                        <input type="text" name="name" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Category:</label>
+                        <select name="category" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                            <option value="Fruits">Fruits</option>
+                            <option value="Vegetables">Vegetables</option>
+                            <option value="Proteins">Proteins</option>
+                            <option value="Grains">Grains</option>
+                            <option value="Dairy">Dairy</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Calories:</label>
+                        <input type="number" name="calories" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Protein (g):</label>
+                        <input type="number" step="0.1" name="protein" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Carbs (g):</label>
+                        <input type="number" step="0.1" name="carbs" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Fat (g):</label>
+                        <input type="number" step="0.1" name="fat" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button type="button" onclick="closeFoodModal()" style="padding: 0.5rem 1rem; background: #6b7280; color: white; border: none; border-radius: 0.25rem;">Cancel</button>
+                    <button type="submit" style="padding: 0.5rem 1rem; background: #278b63; color: white; border: none; border-radius: 0.25rem;">Add Food</button>
+                </div>
+            </form>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    document.getElementById('addFoodForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        formData.append('action', 'add_food');
+        
+        fetch('admin_handler.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                closeFoodModal();
+            } else {
+                showNotification(data.message, 'error');
+            }
+        });
+    });
+    
+    window.closeFoodModal = function() {
+        document.body.removeChild(modal);
+    };
 }
 
 function editFood(button) {
     const row = button.closest('tr');
     const foodName = row.querySelector('h4').textContent;
-    showNotification(`Editing: ${foodName}`, 'info');
+    const description = row.querySelector('p').textContent;
+    const category = row.querySelector('.status-badge').textContent;
+    const calories = row.cells[2].textContent;
+    const protein = row.cells[3].textContent.replace('g', '');
+    const carbs = row.cells[4].textContent.replace('g', '');
+    const fat = row.cells[5].textContent.replace('g', '');
+    
+    const modal = document.createElement('div');
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;';
+    modal.innerHTML = `
+        <div style="background: white; border-radius: 0.75rem; padding: 2rem; max-width: 500px; width: 90%;">
+            <h3 style="margin: 0 0 1rem 0;">Edit Food Item</h3>
+            <form id="editFoodForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Name:</label>
+                        <input type="text" name="name" value="${foodName}" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Category:</label>
+                        <select name="category" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                            <option value="Fruits" ${category === 'Fruits' ? 'selected' : ''}>Fruits</option>
+                            <option value="Vegetables" ${category === 'Vegetables' ? 'selected' : ''}>Vegetables</option>
+                            <option value="Proteins" ${category === 'Proteins' ? 'selected' : ''}>Proteins</option>
+                            <option value="Grains" ${category === 'Grains' ? 'selected' : ''}>Grains</option>
+                            <option value="Dairy" ${category === 'Dairy' ? 'selected' : ''}>Dairy</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Description:</label>
+                    <input type="text" name="description" value="${description}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Calories:</label>
+                        <input type="number" name="calories" value="${calories}" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Protein (g):</label>
+                        <input type="number" step="0.1" name="protein" value="${protein}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Carbs (g):</label>
+                        <input type="number" step="0.1" name="carbs" value="${carbs}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem;">Fat (g):</label>
+                        <input type="number" step="0.1" name="fat" value="${fat}" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                    <button type="button" onclick="closeEditModal()" style="padding: 0.5rem 1rem; background: #6b7280; color: white; border: none; border-radius: 0.25rem;">Cancel</button>
+                    <button type="submit" style="padding: 0.5rem 1rem; background: #278b63; color: white; border: none; border-radius: 0.25rem;">Update Food</button>
+                </div>
+            </form>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    
+    document.getElementById('editFoodForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        formData.append('action', 'edit_food');
+        formData.append('food_id', row.dataset.foodId || Math.floor(Math.random() * 1000));
+        
+        fetch('admin_handler.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                closeEditModal();
+                location.reload();
+            } else {
+                showNotification(data.message, 'error');
+            }
+        });
+    });
+    
+    window.closeEditModal = function() {
+        document.body.removeChild(modal);
+    };
 }
 
 function deleteFood(button) {
     const row = button.closest('tr');
     const foodName = row.querySelector('h4').textContent;
+    const foodId = row.dataset.foodId || Math.floor(Math.random() * 1000);
+    
     if (confirm(`Are you sure you want to delete ${foodName}?`)) {
-        showNotification(`${foodName} deleted successfully!`, 'success');
+        const formData = new FormData();
+        formData.append('action', 'delete_food');
+        formData.append('food_id', foodId);
+        formData.append('name', foodName);
+        
+        fetch('admin_handler.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                row.remove();
+            } else {
+                showNotification(data.message, 'error');
+            }
+        });
     }
 }
 
