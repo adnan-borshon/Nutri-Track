@@ -3,16 +3,34 @@ $page_title = "Appointments";
 require_once '../includes/session.php';
 checkAuth('user');
 $user = getCurrentUser();
+
+$db = getDB();
+
+// Get all nutritionists for booking
+$stmt = $db->query("SELECT id, name, specialty FROM users WHERE role = 'nutritionist' AND status = 'active' ORDER BY name");
+$nutritionists = $stmt->fetchAll();
+
+// Get user's appointments from database
+$stmt = $db->prepare("SELECT a.*, u.name as nutritionist_name, u.specialty 
+                      FROM appointments a 
+                      JOIN users u ON a.nutritionist_id = u.id 
+                      WHERE a.user_id = ? 
+                      ORDER BY a.appointment_date DESC, a.appointment_time DESC");
+$stmt->execute([$user['id']]);
+$allAppointments = $stmt->fetchAll();
+
+// Separate upcoming and past
+$today = date('Y-m-d');
+$upcoming = array_filter($allAppointments, fn($a) => $a['appointment_date'] >= $today && $a['status'] !== 'completed' && $a['status'] !== 'cancelled');
+$past = array_filter($allAppointments, fn($a) => $a['appointment_date'] < $today || $a['status'] === 'completed');
+
+// Get appointments for calendar (current month)
+$currentMonth = date('Y-m');
+$stmt = $db->prepare("SELECT appointment_date, COUNT(*) as count FROM appointments WHERE user_id = ? AND appointment_date LIKE ? GROUP BY appointment_date");
+$stmt->execute([$user['id'], $currentMonth . '%']);
+$calendarAppointments = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
 include 'header.php';
-
-$appointments = [
-    ['id' => '1', 'nutritionist' => 'Dr. Sarah Smith', 'date' => '2024-03-25', 'time' => '14:00', 'status' => 'confirmed'],
-    ['id' => '2', 'nutritionist' => 'Dr. Sarah Smith', 'date' => '2024-03-18', 'time' => '10:00', 'status' => 'completed'],
-    ['id' => '3', 'nutritionist' => 'Dr. Sarah Smith', 'date' => '2024-04-01', 'time' => '15:30', 'status' => 'pending']
-];
-
-$upcoming = array_filter($appointments, fn($a) => $a['status'] !== 'completed');
-$past = array_filter($appointments, fn($a) => $a['status'] === 'completed');
 ?>
 
 <div class="section">
@@ -39,33 +57,28 @@ $past = array_filter($appointments, fn($a) => $a['status'] === 'completed');
                     <?php else: ?>
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
                             <?php foreach ($upcoming as $appointment): ?>
-                                <div class="card" style="display: flex; align-items: center; gap: 1rem; padding: 1rem;">
+                                <div class="card" style="display: flex; align-items: center; gap: 1rem; padding: 1rem;" data-appointment-id="<?php echo $appointment['id']; ?>">
                                     <div class="team-avatar" style="width: 3rem; height: 3rem;">
-                                        <?php echo strtoupper(substr($appointment['nutritionist'], 4, 1) . substr(explode(' ', $appointment['nutritionist'])[1], 0, 1)); ?>
+                                        <?php echo strtoupper(substr($appointment['nutritionist_name'], 0, 1) . (strpos($appointment['nutritionist_name'], ' ') ? substr($appointment['nutritionist_name'], strpos($appointment['nutritionist_name'], ' ') + 1, 1) : '')); ?>
                                     </div>
                                     <div style="flex: 1;">
-                                        <p class="card-title"><?php echo $appointment['nutritionist']; ?></p>
+                                        <p class="card-title"><?php echo htmlspecialchars($appointment['nutritionist_name']); ?></p>
                                         <div style="display: flex; align-items: center; gap: 1rem; font-size: 0.875rem; color: #6b7280;">
                                             <span>
 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;stroke-width:1.5;vertical-align:middle;margin-right:4px;color:#278b63;">
   <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5a2.25 2.25 0 0 1 21 9v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
-</svg> <?php echo date('M j, Y', strtotime($appointment['date'])); ?></span>
+</svg> <?php echo date('M j, Y', strtotime($appointment['appointment_date'])); ?></span>
                                             <span>
 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;stroke-width:1.5;vertical-align:middle;margin-right:4px;color:#278b63;">
   <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-</svg> <?php echo $appointment['time']; ?></span>
+</svg> <?php echo date('g:i A', strtotime($appointment['appointment_time'])); ?></span>
                                         </div>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <span class="recipe-category" style="background: <?php echo $appointment['status'] === 'confirmed' ? '#dcfce7' : '#f3f4f6'; ?>; color: <?php echo $appointment['status'] === 'confirmed' ? '#16a34a' : '#6b7280'; ?>; text-transform: capitalize;">
+                                        <span class="recipe-category" style="background: <?php echo $appointment['status'] === 'scheduled' ? '#dcfce7' : '#f3f4f6'; ?>; color: <?php echo $appointment['status'] === 'scheduled' ? '#16a34a' : '#6b7280'; ?>; text-transform: capitalize;">
                                             <?php echo $appointment['status']; ?>
                                         </span>
-                                        <?php if ($appointment['status'] === 'confirmed'): ?>
-                                            <button class="btn btn-outline">
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;stroke-width:1.5;vertical-align:middle;margin-right:4px;color:#278b63;">
-  <path stroke-linecap="round" stroke-linejoin="round" d="m15.75 10.5 4.72-4.72a.75.75 0 0 1 1.28.53v11.38a.75.75 0 0 1-1.28.53l-4.72-4.72M4.5 18.75h9a2.25 2.25 0 0 0 2.25-2.25v-9a2.25 2.25 0 0 0-2.25-2.25h-9A2.25 2.25 0 0 0 2.25 7.5v9a2.25 2.25 0 0 0 2.25 2.25Z" />
-</svg> Join</button>
-                                        <?php endif; ?>
+                                        <button class="btn btn-outline" onclick="cancelAppointment(<?php echo $appointment['id']; ?>)" style="color:#ef4444;border-color:#ef4444;padding:0.25rem 0.5rem;font-size:0.75rem;">Cancel</button>
                                     </div>
                                 </div>
                             <?php endforeach; ?>
@@ -86,16 +99,16 @@ $past = array_filter($appointments, fn($a) => $a['status'] === 'completed');
                             <?php foreach ($past as $appointment): ?>
                                 <div class="card" style="display: flex; align-items: center; gap: 1rem; padding: 1rem; opacity: 0.75;">
                                     <div class="team-avatar" style="width: 3rem; height: 3rem;">
-                                        <?php echo strtoupper(substr($appointment['nutritionist'], 4, 1) . substr(explode(' ', $appointment['nutritionist'])[1], 0, 1)); ?>
+                                        <?php echo strtoupper(substr($appointment['nutritionist_name'], 0, 1) . (strpos($appointment['nutritionist_name'], ' ') ? substr($appointment['nutritionist_name'], strpos($appointment['nutritionist_name'], ' ') + 1, 1) : '')); ?>
                                     </div>
                                     <div style="flex: 1;">
-                                        <p class="card-title"><?php echo $appointment['nutritionist']; ?></p>
+                                        <p class="card-title"><?php echo htmlspecialchars($appointment['nutritionist_name']); ?></p>
                                         <div style="display: flex; align-items: center; gap: 1rem; font-size: 0.875rem; color: #6b7280;">
-                                            <span><?php echo date('M j, Y', strtotime($appointment['date'])); ?></span>
-                                            <span><?php echo $appointment['time']; ?></span>
+                                            <span><?php echo date('M j, Y', strtotime($appointment['appointment_date'])); ?></span>
+                                            <span><?php echo date('g:i A', strtotime($appointment['appointment_time'])); ?></span>
                                         </div>
                                     </div>
-                                    <span class="recipe-tag">Completed</span>
+                                    <span class="recipe-tag"><?php echo ucfirst($appointment['status']); ?></span>
                                 </div>
                             <?php endforeach; ?>
                         </div>
@@ -106,15 +119,37 @@ $past = array_filter($appointments, fn($a) => $a['status'] === 'completed');
 
         <div class="card">
             <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb;">
-                <h3 class="card-title">Calendar</h3>
+                <h3 class="card-title">Calendar - <?php echo date('F Y'); ?></h3>
             </div>
             <div class="card-content">
-                <div style="text-align: center; padding: 2rem; color: #6b7280;">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:48px;height:48px;stroke-width:1.5;color:#278b63;margin:0 auto 1rem;">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5a2.25 2.25 0 0 1 21 9v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
-</svg><br>
-                    Calendar View<br>
-                    <small>Select a date to view availability</small>
+                <div id="calendarGrid" style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center;">
+                    <?php
+                    $daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    foreach ($daysOfWeek as $day) {
+                        echo "<div style='padding: 0.5rem; font-weight: 600; font-size: 0.75rem; color: #6b7280;'>$day</div>";
+                    }
+                    
+                    $firstDay = date('w', strtotime(date('Y-m-01')));
+                    $daysInMonth = date('t');
+                    $currentDay = date('j');
+                    
+                    for ($i = 0; $i < $firstDay; $i++) {
+                        echo "<div style='padding: 0.5rem;'></div>";
+                    }
+                    
+                    for ($day = 1; $day <= $daysInMonth; $day++) {
+                        $dateStr = date('Y-m-') . str_pad($day, 2, '0', STR_PAD_LEFT);
+                        $hasAppointment = isset($calendarAppointments[$dateStr]);
+                        $isToday = $day == $currentDay;
+                        $bgColor = $isToday ? '#278b63' : ($hasAppointment ? '#dcfce7' : 'transparent');
+                        $textColor = $isToday ? 'white' : '#374151';
+                        echo "<div style='padding: 0.5rem; border-radius: 0.25rem; background: $bgColor; color: $textColor; font-size: 0.875rem; cursor: pointer;' onclick=\"selectDate('$dateStr')\">$day" . ($hasAppointment ? '<span style="display:block;font-size:0.6rem;color:#16a34a;">•</span>' : '') . "</div>";
+                    }
+                    ?>
+                </div>
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; font-size: 0.75rem; color: #6b7280;">
+                    <span style="display: inline-block; width: 10px; height: 10px; background: #278b63; border-radius: 50%; margin-right: 4px;"></span> Today
+                    <span style="display: inline-block; width: 10px; height: 10px; background: #dcfce7; border-radius: 50%; margin-left: 1rem; margin-right: 4px;"></span> Has Appointment
                 </div>
             </div>
         </div>
@@ -135,11 +170,11 @@ document.getElementById('bookAppointmentBtn').addEventListener('click', function
                 <form id="appointmentForm" class="form">
                     <div class="form-group">
                         <label class="form-label">Nutritionist</label>
-                        <select class="form-input" name="nutritionist" required>
+                        <select class="form-input" name="nutritionist_id" id="nutritionistSelect" required>
                             <option value="">Select Nutritionist</option>
-                            <option value="dr_smith">Dr. Sarah Smith</option>
-                            <option value="dr_chen">Dr. Michael Chen</option>
-                            <option value="dr_wilson">Dr. Emily Wilson</option>
+                            <?php foreach ($nutritionists as $n): ?>
+                            <option value="<?php echo $n['id']; ?>"><?php echo htmlspecialchars($n['name']); ?><?php echo $n['specialty'] ? ' - ' . htmlspecialchars($n['specialty']) : ''; ?></option>
+                            <?php endforeach; ?>
                         </select>
                     </div>
                     <div class="form-row">
@@ -175,12 +210,51 @@ document.getElementById('bookAppointmentBtn').addEventListener('click', function
     
     document.body.appendChild(modal);
     
-    document.getElementById('appointmentForm').addEventListener('submit', function(e) {
+    document.getElementById('appointmentForm').addEventListener('submit', async function(e) {
         e.preventDefault();
-        showNotification('Appointment booked successfully!', 'success');
-        modal.remove();
+        const formData = new FormData(this);
+        formData.append('action', 'book_appointment');
+        
+        try {
+            const response = await fetch('user_handler.php', { method: 'POST', body: formData });
+            const data = await response.json();
+            if (data.success) {
+                showNotification(data.message, 'success');
+                modal.remove();
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showNotification(data.message || 'Failed to book appointment', 'error');
+            }
+        } catch (error) {
+            showNotification('Failed to book appointment', 'error');
+        }
     });
 });
+
+async function cancelAppointment(appointmentId) {
+    if (!confirm('Are you sure you want to cancel this appointment?')) return;
+    
+    const formData = new FormData();
+    formData.append('action', 'cancel_appointment');
+    formData.append('appointment_id', appointmentId);
+    
+    try {
+        const response = await fetch('user_handler.php', { method: 'POST', body: formData });
+        const data = await response.json();
+        if (data.success) {
+            showNotification(data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Failed to cancel appointment', 'error');
+        }
+    } catch (error) {
+        showNotification('Failed to cancel appointment', 'error');
+    }
+}
+
+function selectDate(dateStr) {
+    console.log('Selected date:', dateStr);
+}
 
 function showNotification(message, type) {
     const notification = document.createElement('div');

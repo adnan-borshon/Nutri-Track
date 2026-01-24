@@ -1,16 +1,8 @@
 <?php
 $page_title = "Register";
 
-$registration_success = false;
-$registration_error = '';
-
-if ($_POST && isset($_POST['name']) && isset($_POST['email']) && isset($_POST['password']) && isset($_POST['confirmPassword'])) {
-    if ($_POST['password'] !== $_POST['confirmPassword']) {
-        $registration_error = 'Passwords do not match.';
-    } else {
-        $registration_success = true;
-    }
-}
+// Include authentication logic (handles registration)
+include 'auth.php';
 ?>
 
 <!DOCTYPE html>
@@ -104,28 +96,61 @@ if ($_POST && isset($_POST['name']) && isset($_POST['email']) && isset($_POST['p
             
             if (registerForm) {
                 registerForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
                     const password = passwordInput.value;
                     const confirmPassword = confirmPasswordInput.value;
                     
                     if (password !== confirmPassword) {
-                        e.preventDefault();
-                        const notification = document.createElement('div');
-                        notification.className = 'notification notification-error';
-                        notification.innerHTML = '<div style="display: flex; align-items: center; gap: 0.5rem;"><span>❌</span><span>Passwords do not match!</span></div>';
-                        document.body.appendChild(notification);
-                        setTimeout(() => notification.remove(), 5000);
+                        showNotification('Passwords do not match!', 'error');
                         return;
                     }
                     
-                    e.preventDefault();
-                    const notification = document.createElement('div');
-                    notification.className = 'notification notification-success';
-                    notification.innerHTML = '<div style="display: flex; align-items: center; gap: 0.5rem;"><span>✅</span><span>Account created successfully! Welcome to NutriTrack!</span></div>';
-                    document.body.appendChild(notification);
-                    setTimeout(() => {
-                        window.location.href = '../user/dashboard.php';
-                    }, 2000);
+                    if (password.length < 6) {
+                        showNotification('Password must be at least 6 characters!', 'error');
+                        return;
+                    }
+                    
+                    const formData = new FormData(this);
+                    formData.append('register', '1');
+                    formData.append('ajax', '1');
+                    
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    submitBtn.innerHTML = 'Creating account...';
+                    submitBtn.disabled = true;
+                    
+                    fetch('auth.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showNotification(data.message, 'success');
+                            setTimeout(() => {
+                                window.location.href = data.redirect;
+                            }, 1500);
+                        } else {
+                            showNotification(data.message, 'error');
+                            submitBtn.innerHTML = 'Create account';
+                            submitBtn.disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        showNotification('Registration failed. Please try again.', 'error');
+                        submitBtn.innerHTML = 'Create account';
+                        submitBtn.disabled = false;
+                    });
                 });
+            }
+            
+            function showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = `notification notification-${type}`;
+                const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+                notification.innerHTML = `<div style="display: flex; align-items: center; gap: 0.5rem;"><span>${icons[type] || icons.info}</span><span>${message}</span></div>`;
+                document.body.appendChild(notification);
+                setTimeout(() => notification.remove(), 5000);
             }
         });
         

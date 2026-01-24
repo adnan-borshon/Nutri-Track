@@ -3,13 +3,31 @@ $page_title = "Water Tracking";
 require_once '../includes/session.php';
 checkAuth('user');
 $user = getCurrentUser();
-include 'header.php';
 
-$glasses = 5;
+$db = getDB();
+$today = date('Y-m-d');
+
+// Get today's water intake
+$stmt = $db->prepare("SELECT glasses FROM water_logs WHERE user_id = ? AND log_date = ?");
+$stmt->execute([$user['id'], $today]);
+$waterData = $stmt->fetch();
+$glasses = $waterData ? $waterData['glasses'] : 0;
+
 $target = 8;
 $percentage = round(($glasses / $target) * 100);
-$weeklyData = [6, 8, 7, 8, 5, 6, 0];
-$weeklyAverage = round(array_sum($weeklyData) / 7);
+
+// Get weekly data
+$weeklyData = [];
+for ($i = 6; $i >= 0; $i--) {
+    $date = date('Y-m-d', strtotime("-$i days"));
+    $stmt = $db->prepare("SELECT glasses FROM water_logs WHERE user_id = ? AND log_date = ?");
+    $stmt->execute([$user['id'], $date]);
+    $dayData = $stmt->fetch();
+    $weeklyData[] = $dayData ? $dayData['glasses'] : 0;
+}
+$weeklyAverage = count($weeklyData) > 0 ? round(array_sum($weeklyData) / 7) : 0;
+
+include 'header.php';
 ?>
 
 <div class="section">
@@ -138,36 +156,47 @@ const target = <?php echo $target; ?>;
 function updateWaterDisplay() {
     const percentage = Math.round((currentGlasses / target) * 100);
     const circumference = 2 * Math.PI * 70;
-    const offset = circumference * (1 - currentGlasses / target);
+    const offset = circumference * (1 - Math.min(currentGlasses / target, 1));
     
-    // Update circle progress
     document.querySelector('circle[stroke="#06b6d4"]').style.strokeDashoffset = offset;
-    
-    // Update center display
     document.querySelector('.stat-value').textContent = currentGlasses;
-    
-    // Update title
     document.querySelector('.card-title').textContent = `${currentGlasses} of ${target} glasses`;
     
-    // Update stats in the right panel
     const statCards = document.querySelectorAll('.stat-card .stat-value');
-    statCards[0].textContent = currentGlasses; // Glasses
-    statCards[1].textContent = currentGlasses * 250; // ml consumed
-    statCards[2].textContent = percentage + '%'; // percentage
+    if (statCards[0]) statCards[0].textContent = currentGlasses;
+    if (statCards[1]) statCards[1].textContent = currentGlasses * 250;
+    if (statCards[2]) statCards[2].textContent = percentage + '%';
     
-    // Update description
     const description = document.querySelector('.card-description');
-    if (currentGlasses >= target) {
-        description.textContent = "Great job! You've reached your goal!";
-    } else {
-        const remaining = target - currentGlasses;
-        description.textContent = `${remaining} more glass${remaining !== 1 ? 'es' : ''} to go`;
+    if (description) {
+        if (currentGlasses >= target) {
+            description.textContent = "Great job! You've reached your goal!";
+        } else {
+            const remaining = target - currentGlasses;
+            description.textContent = `${remaining} more glass${remaining !== 1 ? 'es' : ''} to go`;
+        }
+    }
+}
+
+async function saveWater(glasses) {
+    try {
+        const formData = new FormData();
+        formData.append('action', 'log_water');
+        formData.append('glasses', glasses);
+        formData.append('log_date', new Date().toISOString().split('T')[0]);
+        
+        const response = await fetch('user_handler.php', { method: 'POST', body: formData });
+        const data = await response.json();
+        if (!data.success) console.error('Failed to save water:', data.message);
+    } catch (error) {
+        console.error('Error saving water:', error);
     }
 }
 
 document.getElementById('addWaterBtn').addEventListener('click', function() {
     currentGlasses++;
     updateWaterDisplay();
+    saveWater(currentGlasses);
     showNotification('Added 1 glass of water!', 'success');
 });
 
@@ -175,48 +204,7 @@ document.getElementById('removeWaterBtn').addEventListener('click', function() {
     if (currentGlasses > 0) {
         currentGlasses--;
         updateWaterDisplay();
-        showNotification('Removed 1 glass of water!', 'info');
-    }
-});
-
-document.querySelectorAll('.quick-add').forEach(button => {
-    button.addEventListener('click', function() {
-        const amount = parseInt(this.dataset.amount);
-        currentGlasses += amount;
-        updateWaterDisplay();
-        showNotification(`Added ${amount} glass${amount !== 1 ? 'es' : ''} of water!`, 'success');
-    });
-});
-
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        border-radius: 0.375rem;
-        color: white;
-        font-weight: 500;
-        z-index: 1000;
-        max-width: 300px;
-    `;
-    
-    const colors = {
-        success: '#278b63',
-        error: '#dc2626',
-        info: '#3b82f6'
-    };
-    
-    notification.style.backgroundColor = colors[type] || colors.info;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 3000);
-}stener('click', function() {
-    if (currentGlasses > 0) {
-        currentGlasses--;
-        updateWaterDisplay();
+        saveWater(currentGlasses);
         showNotification('Removed 1 glass of water', 'info');
     }
 });
@@ -226,17 +214,18 @@ document.querySelectorAll('.quick-add').forEach(btn => {
         const amount = parseInt(this.dataset.amount);
         currentGlasses += amount;
         updateWaterDisplay();
+        saveWater(currentGlasses);
         showNotification(`Added ${amount} glass${amount > 1 ? 'es' : ''} of water!`, 'success');
     });
 });
 
-function showNotification(message, type) {
+function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.style.cssText = `
         position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem;
         border-radius: 0.375rem; color: white; font-weight: 500; z-index: 1000;
-        background: ${type === 'success' ? '#278b63' : '#3b82f6'};
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15); animation: slideIn 0.3s ease-out;
+        background: ${type === 'success' ? '#278b63' : type === 'error' ? '#dc2626' : '#3b82f6'};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     `;
     notification.textContent = message;
     document.body.appendChild(notification);

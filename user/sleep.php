@@ -1,13 +1,32 @@
 <?php
 $page_title = "Sleep Tracking";
-$_SESSION['user_name'] = 'John Doe';
-$_SESSION['user_logged_in'] = true;
-include 'header.php';
+require_once '../includes/session.php';
+checkAuth('user');
+$user = getCurrentUser();
 
-$lastNight = ['hours' => 7.5, 'quality' => 'good'];
+$db = getDB();
+$today = date('Y-m-d');
+
+// Get last night's sleep data
+$stmt = $db->prepare("SELECT hours, quality FROM sleep_logs WHERE user_id = ? AND log_date = ?");
+$stmt->execute([$user['id'], date('Y-m-d', strtotime('-1 day'))]);
+$lastNightData = $stmt->fetch();
+$lastNight = $lastNightData ? ['hours' => $lastNightData['hours'], 'quality' => $lastNightData['quality'] ?? 'good'] : ['hours' => 0, 'quality' => 'none'];
+
 $target = 8;
-$weeklyData = [7, 6.5, 8, 7.5, 6, 9, 8.5];
-$weeklyAverage = array_sum($weeklyData) / count($weeklyData);
+
+// Get weekly data
+$weeklyData = [];
+for ($i = 6; $i >= 0; $i--) {
+    $date = date('Y-m-d', strtotime("-$i days"));
+    $stmt = $db->prepare("SELECT hours FROM sleep_logs WHERE user_id = ? AND log_date = ?");
+    $stmt->execute([$user['id'], $date]);
+    $dayData = $stmt->fetch();
+    $weeklyData[] = $dayData ? floatval($dayData['hours']) : 0;
+}
+$weeklyAverage = count(array_filter($weeklyData)) > 0 ? array_sum($weeklyData) / count(array_filter($weeklyData)) : 0;
+
+include 'header.php';
 ?>
 
 <div class="section">
@@ -54,11 +73,11 @@ $weeklyAverage = array_sum($weeklyData) / count($weeklyData);
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Hours of Sleep</label>
-                            <input type="number" step="0.5" min="0" max="24" placeholder="7.5" class="form-input">
+                            <input type="number" id="sleepHours" step="0.5" min="0" max="24" placeholder="7.5" class="form-input">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Sleep Quality</label>
-                            <select class="form-input">
+                            <select id="sleepQuality" class="form-input">
                                 <option value="">Select</option>
                                 <option value="excellent">Excellent</option>
                                 <option value="good">Good</option>
@@ -70,18 +89,14 @@ $weeklyAverage = array_sum($weeklyData) / count($weeklyData);
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label">Bedtime</label>
-                            <input type="time" class="form-input">
+                            <input type="time" id="bedtime" class="form-input">
                         </div>
                         <div class="form-group">
                             <label class="form-label">Wake Time</label>
-                            <input type="time" class="form-input">
+                            <input type="time" id="wakeTime" class="form-input">
                         </div>
                     </div>
-                    <button class="btn btn-primary" style="">
-<!-- <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:14px;height:14px;stroke-width:1.5;vertical-align:middle;margin-right:4px;color:#278b63;">
-  <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
-</svg>  -->
-Log Sleep</button>
+                    <button class="btn btn-primary" id="logSleepBtn">Log Sleep</button>
                 </div>
             </div>
         </div>
@@ -134,5 +149,54 @@ Log Sleep</button>
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('logSleepBtn').addEventListener('click', async function(e) {
+    e.preventDefault();
+    const hours = document.getElementById('sleepHours').value;
+    const quality = document.getElementById('sleepQuality').value;
+    const bedtime = document.getElementById('bedtime').value;
+    const wakeTime = document.getElementById('wakeTime').value;
+    
+    if (!hours) {
+        showNotification('Please enter hours of sleep', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'log_sleep');
+    formData.append('hours', hours);
+    formData.append('quality', quality || 'good');
+    formData.append('bedtime', bedtime);
+    formData.append('wake_time', wakeTime);
+    formData.append('log_date', new Date().toISOString().split('T')[0]);
+    
+    try {
+        const response = await fetch('user_handler.php', { method: 'POST', body: formData });
+        const data = await response.json();
+        if (data.success) {
+            showNotification('Sleep logged successfully!', 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showNotification(data.message || 'Failed to log sleep', 'error');
+        }
+    } catch (error) {
+        showNotification('Failed to log sleep', 'error');
+    }
+});
+
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem;
+        border-radius: 0.375rem; color: white; font-weight: 500; z-index: 1000;
+        background: ${type === 'success' ? '#278b63' : type === 'error' ? '#dc2626' : '#3b82f6'};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+</script>
 
 <?php include 'footer.php'; ?>

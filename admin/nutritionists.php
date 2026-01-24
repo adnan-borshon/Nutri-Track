@@ -1,6 +1,17 @@
 <?php
 require_once '../includes/session.php';
 checkAuth('admin');
+
+$db = getDB();
+$stmt = $db->prepare("SELECT n.id, n.name, n.email, n.specialty, n.status, COUNT(u.id) AS clients_count
+                       FROM users n
+                       LEFT JOIN users u ON u.nutritionist_id = n.id AND u.role = 'user'
+                       WHERE n.role = 'nutritionist'
+                       GROUP BY n.id
+                       ORDER BY n.created_at DESC");
+$stmt->execute();
+$nutritionists = $stmt->fetchAll();
+
 include 'header.php';
 ?>
 
@@ -32,129 +43,22 @@ include 'header.php';
                 </tr>
             </thead>
             <tbody>
-                <tr>
+                <?php foreach ($nutritionists as $n): ?>
+                <tr data-nutritionist-id="<?php echo (int)$n['id']; ?>" data-status="<?php echo htmlspecialchars($n['status'] ?? 'active'); ?>">
                     <td>
                         <div class="admin-user-info">
-                            <div class="team-avatar">SS</div>
+                            <div class="team-avatar"><?php echo htmlspecialchars(getUserInitials($n['name'])); ?></div>
                             <div class="admin-user-details">
-                                <h4>Dr. Sarah Smith</h4>
-                                <p>sarah@nutritrack.com</p>
+                                <h4><?php echo htmlspecialchars($n['name']); ?></h4>
+                                <p><?php echo htmlspecialchars($n['email']); ?></p>
                             </div>
                         </div>
                     </td>
-                    <td><span class="status-badge completed">Weight Management</span></td>
-                    <td><span class="status-badge confirmed">active</span></td>
-                    <td>
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-users" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0 -3 -3.85" /></svg> 24</td>
-                    <td>4.9/5</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-outline btn-sm" onclick="viewNutritionist(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 3.6 -6 6 -9 6c-3 0 -6.6 -2.4 -9 -6c2.4 -3.6 6 -6 9 -6c3.6 0 6.6 2.4 9 6" /></svg> View
-                            </button>
-                            <button class="btn btn-outline btn-sm" onclick="editNutritionist(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg> Edit
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                
-                <tr>
-                    <td>
-                        <div class="admin-user-info">
-                            <div class="team-avatar">MC</div>
-                            <div class="admin-user-details">
-                                <h4>Dr. Michael Chen</h4>
-                                <p>michael@nutritrack.com</p>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="status-badge completed">Sports Nutrition</span></td>
-                    <td><span class="status-badge confirmed">active</span></td>
-                    <td>
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-users" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0 -3 -3.85" /></svg> 18</td>
-                    <td>4.8/5</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-outline btn-sm" onclick="viewNutritionist(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 3.6 -6 6 -9 6c-3 0 -6.6 -2.4 -9 -6c2.4 -3.6 6 -6 9 -6c3.6 0 6.6 2.4 9 6" /></svg> View
-                            </button>
-                            <button class="btn btn-outline btn-sm" onclick="editNutritionist(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg> Edit
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                
-                <tr>
-                    <td>
-                        <div class="admin-user-info">
-                            <div class="team-avatar">EW</div>
-                            <div class="admin-user-details">
-                                <h4>Dr. Emily Wilson</h4>
-                                <p>emily@nutritrack.com</p>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="status-badge completed">Clinical Nutrition</span></td>
-                    <td><span class="status-badge confirmed">active</span></td>
-                    <td>
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-users" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0 -3 -3.85" /></svg> 31</td>
-                    <td>4.95/5</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-outline btn-sm" onclick="viewNutritionist(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 3.6 -6 6 -9 6c-3 0 -6.6 -2.4 -9 -6c2.4 -3.6 6 -6 9 -6c3.6 0 6.6 2.4 9 6" /></svg> View
-                            </button>
-                            <button class="btn btn-outline btn-sm" onclick="editNutritionist(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg> Edit
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                
-                <tr>
-                    <td>
-                        <div class="admin-user-info">
-                            <div class="team-avatar">JM</div>
-                            <div class="admin-user-details">
-                                <h4>Dr. James Martinez</h4>
-                                <p>james@nutritrack.com</p>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="status-badge completed">Pediatric Nutrition</span></td>
-                    <td><span class="status-badge pending">pending</span></td>
-                    <td>
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-users" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0 -3 -3.85" /></svg> 0</td>
+                    <td><span class="status-badge completed nutritionist-specialty"><?php echo htmlspecialchars($n['specialty'] ?? ''); ?></span></td>
+                    <td><span class="status-badge confirmed nutritionist-status"><?php echo htmlspecialchars($n['status'] ?? 'active'); ?></span></td>
+                    <td class="nutritionist-clients" data-clients-count="<?php echo (int)($n['clients_count'] ?? 0); ?>">
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-users" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0 -3 -3.85" /></svg> <?php echo (int)($n['clients_count'] ?? 0); ?></td>
                     <td>-</td>
-                    <td>
-                        <div class="action-buttons">
-                            <button class="btn btn-outline btn-sm" onclick="viewNutritionist(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 3.6 -6 6 -9 6c-3 0 -6.6 -2.4 -9 -6c2.4 -3.6 6 -6 9 -6c3.6 0 6.6 2.4 9 6" /></svg> View
-                            </button>
-                            <button class="btn btn-outline btn-sm" onclick="editNutritionist(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg> Edit
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-                
-                <tr>
-                    <td>
-                        <div class="admin-user-info">
-                            <div class="team-avatar">LT</div>
-                            <div class="admin-user-details">
-                                <h4>Dr. Lisa Thompson</h4>
-                                <p>lisa@nutritrack.com</p>
-                            </div>
-                        </div>
-                    </td>
-                    <td><span class="status-badge completed">Eating Disorders</span></td>
-                    <td><span class="status-badge confirmed">active</span></td>
-                    <td>
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-users" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 7m-4 0a4 4 0 1 0 8 0a4 4 0 1 0 -8 0" /><path d="M3 21v-2a4 4 0 0 1 4 -4h4a4 4 0 0 1 4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /><path d="M21 21v-2a4 4 0 0 0 -3 -3.85" /></svg> 15</td>
-                    <td>4.7/5</td>
                     <td>
                         <div class="action-buttons">
                             <button class="btn btn-outline btn-sm" onclick="viewNutritionist(this)">
@@ -169,6 +73,7 @@ include 'header.php';
                         </div>
                     </td>
                 </tr>
+                <?php endforeach; ?>
             </tbody>
         </table>
     </div>
@@ -177,12 +82,13 @@ include 'header.php';
 <script>
 function viewNutritionist(button) {
     const row = button.closest('tr');
+    const nutritionistId = row.dataset.nutritionistId;
     const nutritionistName = row.querySelector('h4').textContent;
     const email = row.querySelector('p').textContent;
-    const specialty = row.querySelector('.status-badge').textContent;
-    const clients = row.cells[3].textContent.replace(/\D/g, '');
+    const specialty = row.querySelector('.nutritionist-specialty')?.textContent || '';
+    const clients = row.querySelector('.nutritionist-clients')?.dataset.clientsCount || '0';
     const rating = row.cells[4].textContent;
-    const status = row.querySelector('.status-badge').classList.contains('confirmed') ? 'Active' : 'Pending';
+    const status = row.dataset.status || '';
     
     const modal = document.createElement('div');
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;';
@@ -221,7 +127,7 @@ function viewNutritionist(button) {
             </div>
             <div style="display: flex; gap: 0.75rem; justify-content: flex-end;">
                 <button onclick="closeViewModal()" style="padding: 0.5rem 1rem; background: #6b7280; color: white; border: none; border-radius: 0.375rem; cursor: pointer;">Close</button>
-                <button onclick="editNutritionistFromView('${nutritionistName}', '${email}', '${specialty}')" style="padding: 0.5rem 1rem; background: #278b63; color: white; border: none; border-radius: 0.375rem; cursor: pointer;">Edit Details</button>
+                <button onclick="editNutritionistFromView('${nutritionistId}')" style="padding: 0.5rem 1rem; background: #278b63; color: white; border: none; border-radius: 0.375rem; cursor: pointer;">Edit Details</button>
             </div>
         </div>
     `;
@@ -231,16 +137,11 @@ function viewNutritionist(button) {
         document.body.removeChild(modal);
     };
     
-    window.editNutritionistFromView = function(name, email, specialty) {
+    window.editNutritionistFromView = function(nutritionistId) {
         closeViewModal();
-        const rows = document.querySelectorAll('tbody tr');
-        for (let row of rows) {
-            if (row.querySelector('h4').textContent === name) {
-                const editBtn = row.querySelector('button[onclick*="editNutritionist"]');
-                if (editBtn) editBtn.click();
-                break;
-            }
-        }
+        const targetRow = document.querySelector(`tbody tr[data-nutritionist-id="${nutritionistId}"]`);
+        const editBtn = targetRow?.querySelector('button[onclick*="editNutritionist"]');
+        if (editBtn) editBtn.click();
     };
 }
 
@@ -277,6 +178,14 @@ function showAddNutritionistModal() {
                         <option value="Clinical Nutrition">Clinical Nutrition</option>
                         <option value="Pediatric Nutrition">Pediatric Nutrition</option>
                         <option value="Eating Disorders">Eating Disorders</option>
+                    </select>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem;">Status:</label>
+                    <select name="status" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                        <option value="active" ${status === 'active' ? 'selected' : ''}>active</option>
+                        <option value="pending" ${status === 'pending' ? 'selected' : ''}>pending</option>
+                        <option value="inactive" ${status === 'inactive' ? 'selected' : ''}>inactive</option>
                     </select>
                 </div>
                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
@@ -317,8 +226,13 @@ function editNutritionist(button) {
     const row = button.closest('tr');
     const nutritionistName = row.querySelector('h4').textContent;
     const email = row.querySelector('p').textContent;
-    const specialty = row.querySelector('.status-badge').textContent;
-    const nutritionistId = row.dataset.nutritionistId || Math.floor(Math.random() * 1000);
+    const specialty = row.querySelector('.nutritionist-specialty')?.textContent || '';
+    const status = row.dataset.status || 'active';
+    const nutritionistId = row.dataset.nutritionistId;
+    if (!nutritionistId) {
+        showNotification('Missing nutritionist ID', 'error');
+        return;
+    }
     
     const modal = document.createElement('div');
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;';
@@ -326,6 +240,7 @@ function editNutritionist(button) {
         <div style="background: white; border-radius: 0.75rem; padding: 2rem; max-width: 400px; width: 90%;">
             <h3 style="margin: 0 0 1rem 0;">Edit Nutritionist</h3>
             <form id="editNutritionistForm">
+                <input type="hidden" name="nutritionist_id" value="${nutritionistId}">
                 <div style="margin-bottom: 1rem;">
                     <label style="display: block; margin-bottom: 0.5rem;">Name:</label>
                     <input type="text" name="name" value="${nutritionistName}" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
@@ -357,7 +272,6 @@ function editNutritionist(button) {
         e.preventDefault();
         const formData = new FormData(this);
         formData.append('action', 'edit_nutritionist');
-        formData.append('nutritionist_id', nutritionistId);
         
         fetch('admin_handler.php', {
             method: 'POST',
@@ -383,7 +297,11 @@ function editNutritionist(button) {
 function deleteNutritionist(button) {
     const row = button.closest('tr');
     const nutritionistName = row.querySelector('h4').textContent;
-    const nutritionistId = row.dataset.nutritionistId || Math.floor(Math.random() * 1000);
+    const nutritionistId = row.dataset.nutritionistId;
+    if (!nutritionistId) {
+        showNotification('Missing nutritionist ID', 'error');
+        return;
+    }
     
     if (confirm(`Are you sure you want to delete ${nutritionistName}?`)) {
         const formData = new FormData();

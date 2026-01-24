@@ -1,6 +1,16 @@
 <?php
 require_once '../includes/session.php';
 checkAuth('admin');
+
+$db = getDB();
+$stmt = $db->prepare("SELECT c.id, c.name, c.description, COUNT(f.id) AS items_count
+                       FROM food_categories c
+                       LEFT JOIN foods f ON f.category_id = c.id
+                       GROUP BY c.id
+                       ORDER BY c.name ASC");
+$stmt->execute();
+$categories = $stmt->fetchAll();
+
 include 'header.php';
 ?>
 
@@ -16,6 +26,30 @@ include 'header.php';
     </div>
 </div>
 
+<div class="grid grid-4">
+    <?php foreach ($categories as $c): ?>
+    <div class="card" data-category-id="<?php echo (int)$c['id']; ?>">
+        <div class="card-content">
+            <div class="card-icon">
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-apple" style="color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 14m-7 0a7 7 0 1 0 14 0a7 7 0 1 0 -14 0" /><path d="M12 11v-6a2 2 0 0 1 2 -2h2v1a2 2 0 0 1 -2 2h-2" /><path d="M10 10.5c-.667 -.667 -2.5 0 -2.5 2.5s1.833 3.167 2.5 2.5" /><path d="M16 10.5c.667 -.667 2.5 0 2.5 2.5s-1.833 3.167 -2.5 2.5" /></svg>
+            </div>
+            <h3 class="card-title"><?php echo htmlspecialchars($c['name']); ?></h3>
+            <p class="card-description"><?php echo htmlspecialchars($c['description'] ?? ''); ?></p>
+            <div class="faq-answer"><?php echo (int)($c['items_count'] ?? 0); ?> items</div>
+            <div class="action-buttons">
+                <button class="btn btn-outline btn-sm" onclick="editCategory(this)">
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-edit" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg> Edit
+                </button>
+                <button class="btn btn-outline btn-sm" onclick="deleteCategory(this)">
+<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-trash" style="vertical-align:middle;margin-right:4px;color:#dc2626;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg> Delete
+                </button>
+            </div>
+        </div>
+    </div>
+    <?php endforeach; ?>
+</div>
+
+<?php if (false): ?>
 <div class="grid grid-4">
     <div class="card">
         <div class="card-content">
@@ -170,6 +204,8 @@ include 'header.php';
     </div>
 </div>
 
+<?php endif; ?>
+
 <script>
 function showAddCategoryModal() {
     const modal = document.createElement('div');
@@ -209,6 +245,7 @@ function showAddCategoryModal() {
             if (data.success) {
                 showNotification(data.message, 'success');
                 closeCategoryModal();
+                location.reload();
             } else {
                 showNotification(data.message, 'error');
             }
@@ -222,6 +259,11 @@ function showAddCategoryModal() {
 
 function editCategory(button) {
     const card = button.closest('.card');
+    const categoryId = card.dataset.categoryId;
+    if (!categoryId) {
+        showNotification('Missing category ID', 'error');
+        return;
+    }
     const title = card.querySelector('.card-title').textContent;
     const description = card.querySelector('.card-description').textContent;
     const items = card.querySelector('.faq-answer').textContent;
@@ -257,7 +299,7 @@ function editCategory(button) {
         e.preventDefault();
         const formData = new FormData(this);
         formData.append('action', 'edit_category');
-        formData.append('category_id', card.dataset.categoryId || Math.floor(Math.random() * 1000));
+        formData.append('category_id', categoryId);
         
         fetch('admin_handler.php', {
             method: 'POST',
@@ -283,7 +325,11 @@ function editCategory(button) {
 function deleteCategory(button) {
     const card = button.closest('.card');
     const title = card.querySelector('.card-title').textContent;
-    const categoryId = card.dataset.categoryId || Math.floor(Math.random() * 1000);
+    const categoryId = card.dataset.categoryId;
+    if (!categoryId) {
+        showNotification('Missing category ID', 'error');
+        return;
+    }
     
     if (confirm(`Are you sure you want to delete ${title}? This will also remove all food items in this category.`)) {
         const formData = new FormData();

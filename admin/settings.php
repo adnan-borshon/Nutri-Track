@@ -1,6 +1,76 @@
 <?php
 require_once '../includes/session.php';
 checkAuth('admin');
+$user = getCurrentUser();
+
+// Load system settings from DB
+$db = getDB();
+function getSetting($db, $key, $default = '0') {
+    $stmt = $db->prepare('SELECT setting_value FROM system_settings WHERE setting_key = ?');
+    $stmt->execute([$key]);
+    $row = $stmt->fetch();
+    return $row ? $row['setting_value'] : $default;
+}
+$emailNotifications = getSetting($db, 'email_notifications', '1');
+$registrationAlerts = getSetting($db, 'registration_alerts', '1');
+$maintenanceAlerts = getSetting($db, 'maintenance_alerts', '0');
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    $db = getDB();
+    
+    if ($_POST['action'] === 'update_profile') {
+        $name = trim($_POST['name'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        
+        if (empty($name) || empty($email)) {
+            echo json_encode(['success' => false, 'message' => 'Name and email are required']);
+            exit;
+        }
+        
+        $stmt = $db->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+        $stmt->execute([$email, $user['id']]);
+        if ($stmt->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'Email already in use']);
+            exit;
+        }
+        
+        $stmt = $db->prepare("UPDATE users SET name = ?, email = ? WHERE id = ?");
+        $stmt->execute([$name, $email, $user['id']]);
+        $_SESSION['user_name'] = $name;
+        
+        echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
+        exit;
+    }
+    
+    if ($_POST['action'] === 'update_password') {
+        $current = $_POST['current_password'] ?? '';
+        $new = $_POST['new_password'] ?? '';
+        $confirm = $_POST['confirm_password'] ?? '';
+        
+        if ($new !== $confirm) {
+            echo json_encode(['success' => false, 'message' => 'Passwords do not match']);
+            exit;
+        }
+        
+        $stmt = $db->prepare("SELECT password FROM users WHERE id = ?");
+        $stmt->execute([$user['id']]);
+        $userData = $stmt->fetch();
+        
+        if (!password_verify($current, $userData['password'])) {
+            echo json_encode(['success' => false, 'message' => 'Current password is incorrect']);
+            exit;
+        }
+        
+        $stmt = $db->prepare("UPDATE users SET password = ? WHERE id = ?");
+        $stmt->execute([password_hash($new, PASSWORD_DEFAULT), $user['id']]);
+        
+        echo json_encode(['success' => true, 'message' => 'Password updated successfully']);
+        exit;
+    }
+}
+
 include 'header.php';
 ?>
 
@@ -16,20 +86,18 @@ include 'header.php';
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">Full Name</label>
-                    <input type="text" class="form-input" value="System Administrator">
+                    <input type="text" id="profileName" class="form-input" value="<?php echo htmlspecialchars($user['name']); ?>">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Email</label>
-                    <input type="email" class="form-input" value="admin@nutritrack.com">
+                    <input type="email" id="profileEmail" class="form-input" value="<?php echo htmlspecialchars($user['email']); ?>">
                 </div>
             </div>
             <div class="form-group">
                 <label class="form-label">Role</label>
-                <select class="form-input">
-                    <option value="admin">System Administrator</option>
-                    <option value="manager">Manager</option>
-                </select>
+                <input type="text" class="form-input" value="<?php echo ucfirst($user['role']); ?>" disabled>
             </div>
+            <button class="btn btn-primary" id="updateProfileBtn">Update Profile</button>
         </div>
     </div>
 </div>
@@ -42,7 +110,7 @@ include 'header.php';
                 <h4>Email Notifications</h4>
                 <p>Receive email notifications for important events</p>
             </div>
-            <div class="admin-toggle active" onclick="toggleSetting(this)">
+            <div class="admin-toggle<?php echo $emailNotifications === '1' ? ' active' : ''; ?>" data-setting="email_notifications" onclick="toggleSetting(this)">
                 <div class="admin-toggle-handle"></div>
             </div>
         </div>
@@ -52,7 +120,7 @@ include 'header.php';
                 <h4>User Registration Alerts</h4>
                 <p>Get notified when new users register</p>
             </div>
-            <div class="admin-toggle active" onclick="toggleSetting(this)">
+            <div class="admin-toggle<?php echo $registrationAlerts === '1' ? ' active' : ''; ?>" data-setting="registration_alerts" onclick="toggleSetting(this)">
                 <div class="admin-toggle-handle"></div>
             </div>
         </div>
@@ -62,7 +130,7 @@ include 'header.php';
                 <h4>System Maintenance Alerts</h4>
                 <p>Receive alerts about system maintenance</p>
             </div>
-            <div class="admin-toggle" onclick="toggleSetting(this)">
+            <div class="admin-toggle<?php echo $maintenanceAlerts === '1' ? ' active' : ''; ?>" data-setting="maintenance_alerts" onclick="toggleSetting(this)">
                 <div class="admin-toggle-handle"></div>
             </div>
         </div>
@@ -75,19 +143,19 @@ include 'header.php';
         <div class="form">
             <div class="form-group">
                 <label class="form-label">Current Password</label>
-                <input type="password" class="form-input">
+                <input type="password" id="currentPassword" class="form-input">
             </div>
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">New Password</label>
-                    <input type="password" class="form-input">
+                    <input type="password" id="newPassword" class="form-input">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Confirm Password</label>
-                    <input type="password" class="form-input">
+                    <input type="password" id="confirmPassword" class="form-input">
                 </div>
             </div>
-            <button class="btn btn-primary" onclick="updatePassword()">Update Password</button>
+            <button class="btn btn-primary" id="updatePasswordBtn">Update Password</button>
         </div>
     </div>
 </div>
@@ -113,47 +181,96 @@ include 'header.php';
 <script>
 function toggleSetting(toggle) {
     toggle.classList.toggle('active');
-    const settingName = toggle.closest('.settings-section').querySelector('h4').textContent;
+    const settingKey = toggle.dataset.setting;
     const isActive = toggle.classList.contains('active');
-    showNotification(`${settingName} ${isActive ? 'enabled' : 'disabled'}`, 'info');
+    const settingName = toggle.closest('.settings-section').querySelector('h4').textContent;
+
+    if (settingKey) {
+        const formData = new FormData();
+        formData.append('action', 'update_system_setting');
+        formData.append('key', settingKey);
+        formData.append('value', isActive ? '1' : '0');
+
+        fetch('admin_handler.php', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification(`${settingName} ${isActive ? 'enabled' : 'disabled'}`, 'success');
+                } else {
+                    showNotification(data.message || 'Failed to save setting', 'error');
+                    toggle.classList.toggle('active'); // revert
+                }
+            })
+            .catch(() => {
+                showNotification('Failed to save setting', 'error');
+                toggle.classList.toggle('active'); // revert
+            });
+    } else {
+        showNotification(`${settingName} ${isActive ? 'enabled' : 'disabled'}`, 'info');
+    }
 }
 
-function updatePassword() {
-    const passwordInputs = document.querySelectorAll('input[type="password"]');
-    const currentPassword = passwordInputs[0].value;
-    const newPassword = passwordInputs[1].value;
-    const confirmPassword = passwordInputs[2].value;
+// Update Profile
+document.getElementById('updateProfileBtn').addEventListener('click', async function(e) {
+    e.preventDefault();
+    const name = document.getElementById('profileName').value.trim();
+    const email = document.getElementById('profileEmail').value.trim();
     
-    if (!currentPassword || !newPassword || !confirmPassword) {
-        showNotification('Please fill in all password fields', 'error');
+    if (!name || !email) {
+        showNotification('Name and email are required', 'error');
         return;
     }
     
-    if (newPassword !== confirmPassword) {
-        showNotification('New passwords do not match', 'error');
+    const formData = new FormData();
+    formData.append('action', 'update_profile');
+    formData.append('name', name);
+    formData.append('email', email);
+    
+    try {
+        const response = await fetch('settings.php', { method: 'POST', body: formData });
+        const data = await response.json();
+        showNotification(data.message, data.success ? 'success' : 'error');
+        if (data.success) setTimeout(() => location.reload(), 1000);
+    } catch (error) {
+        showNotification('Failed to update profile', 'error');
+    }
+});
+
+// Update Password
+document.getElementById('updatePasswordBtn').addEventListener('click', async function(e) {
+    e.preventDefault();
+    const current = document.getElementById('currentPassword').value;
+    const newPass = document.getElementById('newPassword').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    
+    if (!current || !newPass || !confirm) {
+        showNotification('All password fields are required', 'error');
+        return;
+    }
+    if (newPass !== confirm) {
+        showNotification('Passwords do not match', 'error');
         return;
     }
     
     const formData = new FormData();
     formData.append('action', 'update_password');
-    formData.append('current_password', currentPassword);
-    formData.append('new_password', newPassword);
-    formData.append('confirm_password', confirmPassword);
+    formData.append('current_password', current);
+    formData.append('new_password', newPass);
+    formData.append('confirm_password', confirm);
     
-    fetch('admin_handler.php', {
-        method: 'POST',
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
+    try {
+        const response = await fetch('settings.php', { method: 'POST', body: formData });
+        const data = await response.json();
+        showNotification(data.message, data.success ? 'success' : 'error');
         if (data.success) {
-            showNotification(data.message, 'success');
-            passwordInputs.forEach(input => input.value = '');
-        } else {
-            showNotification(data.message, 'error');
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
         }
-    });
-}
+    } catch (error) {
+        showNotification('Failed to update password', 'error');
+    }
+});
 
 function generateReport() {
     const formData = new FormData();

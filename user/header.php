@@ -1,5 +1,6 @@
 <?php
 require_once '../includes/session.php';
+checkAuth('user');
 $user = getCurrentUser();
 ?>
 <!DOCTYPE html>

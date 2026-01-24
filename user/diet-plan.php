@@ -3,45 +3,58 @@ $page_title = "Diet Plan";
 require_once '../includes/session.php';
 checkAuth('user');
 $user = getCurrentUser();
-include 'header.php';
 
-// Sample diet plan data - in real app, this would come from database
-$hasPlan = true; // Set to false to show "no plan" state
+$db = getDB();
 
-$dietPlan = [
-    'name' => 'Balanced Weight Loss Plan',
-    'duration' => '4 weeks',
-    'startDate' => '2024-01-15',
-    'nutritionist' => 'Dr. Sarah Smith',
-    'goals' => [
-        ['label' => 'Daily Calories', 'value' => '1,800', 'unit' => 'kcal'],
-        ['label' => 'Protein', 'value' => '120', 'unit' => 'g'],
-        ['label' => 'Carbs', 'value' => '180', 'unit' => 'g'],
-        ['label' => 'Fat', 'value' => '60', 'unit' => 'g']
-    ],
-    'meals' => [
-        [
-            'time' => 'Breakfast',
-            'icon' => '🌅',
-            'items' => ['Oatmeal with berries', 'Greek yogurt', 'Green tea']
+// Get active diet plan from database
+$stmt = $db->prepare("SELECT dp.*, u.name as nutritionist_name 
+                      FROM diet_plans dp 
+                      JOIN users u ON dp.nutritionist_id = u.id 
+                      WHERE dp.user_id = ? AND dp.status = 'active' 
+                      ORDER BY dp.created_at DESC LIMIT 1");
+$stmt->execute([$user['id']]);
+$plan = $stmt->fetch();
+
+$hasPlan = !empty($plan);
+
+if ($hasPlan) {
+    // Get meal suggestions for this plan
+    $stmt = $db->prepare("SELECT dpm.*, f.name as food_name 
+                          FROM diet_plan_meals dpm 
+                          LEFT JOIN foods f ON dpm.food_id = f.id 
+                          WHERE dpm.diet_plan_id = ? 
+                          ORDER BY FIELD(dpm.meal_type, 'breakfast', 'lunch', 'snack', 'dinner')");
+    $stmt->execute([$plan['id']]);
+    $planMeals = $stmt->fetchAll();
+    
+    // Organize meals by type
+    $mealsByType = ['breakfast' => [], 'lunch' => [], 'snack' => [], 'dinner' => []];
+    foreach ($planMeals as $meal) {
+        $mealsByType[$meal['meal_type']][] = $meal['food_name'] ?: $meal['custom_food_name'];
+    }
+    
+    $dietPlan = [
+        'id' => $plan['id'],
+        'name' => $plan['name'],
+        'duration' => $plan['duration_weeks'] . ' weeks',
+        'startDate' => $plan['start_date'],
+        'nutritionist' => $plan['nutritionist_name'],
+        'goals' => [
+            ['label' => 'Daily Calories', 'value' => number_format($plan['daily_calories']), 'unit' => 'kcal'],
+            ['label' => 'Protein', 'value' => $plan['protein_goal'], 'unit' => 'g'],
+            ['label' => 'Carbs', 'value' => $plan['carbs_goal'], 'unit' => 'g'],
+            ['label' => 'Fat', 'value' => $plan['fat_goal'], 'unit' => 'g']
         ],
-        [
-            'time' => 'Lunch', 
-            'icon' => '☀️',
-            'items' => ['Grilled chicken salad', 'Quinoa', 'Mixed vegetables']
-        ],
-        [
-            'time' => 'Snack',
-            'icon' => '🍎', 
-            'items' => ['Apple with almonds', 'Herbal tea']
-        ],
-        [
-            'time' => 'Dinner',
-            'icon' => '🌙',
-            'items' => ['Baked salmon', 'Sweet potato', 'Steamed broccoli']
+        'meals' => [
+            ['time' => 'Breakfast', 'icon' => '🌅', 'items' => $mealsByType['breakfast'] ?: ['No items specified']],
+            ['time' => 'Lunch', 'icon' => '☀️', 'items' => $mealsByType['lunch'] ?: ['No items specified']],
+            ['time' => 'Snack', 'icon' => '🍎', 'items' => $mealsByType['snack'] ?: ['No items specified']],
+            ['time' => 'Dinner', 'icon' => '🌙', 'items' => $mealsByType['dinner'] ?: ['No items specified']]
         ]
-    ]
-];
+    ];
+}
+
+include 'header.php';
 ?>
 
 <div class="page-header">
@@ -172,14 +185,87 @@ $dietPlan = [
 <?php endif; ?>
 
 <script>
-function generateShoppingList() {
-    alert('Shopping list feature coming soon! This will generate a grocery list based on your meal plan.');
+async function generateShoppingList() {
+    try {
+        const formData = new FormData();
+        formData.append('action', 'get_shopping_list');
+        
+        const response = await fetch('user_handler.php', { method: 'POST', body: formData });
+        const data = await response.json();
+        
+        if (data.success && data.data && data.data.length > 0) {
+            showShoppingListModal(data.data);
+        } else {
+            showNotification(data.message || 'No items in shopping list', 'error');
+        }
+    } catch (error) {
+        showNotification('Failed to generate shopping list', 'error');
+    }
 }
 
-function requestChanges() {
-    if (confirm('Would you like to request changes to your diet plan? This will send a message to your nutritionist.')) {
-        alert('Request sent! Your nutritionist will contact you within 24 hours.');
+function showShoppingListModal(items) {
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Shopping List</h2>
+                <button onclick="this.closest('.modal-overlay').remove()" class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <ul style="list-style: none; padding: 0;">
+                    ${items.map(item => `<li style="padding: 0.5rem 0; border-bottom: 1px solid #e5e7eb; display: flex; align-items: center; gap: 0.5rem;">
+                        <input type="checkbox" style="width: 18px; height: 18px;">
+                        <span>${item}</span>
+                    </li>`).join('')}
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="this.closest('.modal-overlay').remove()">Close</button>
+                <button class="btn btn-primary" onclick="printShoppingList()">Print List</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function printShoppingList() {
+    window.print();
+}
+
+async function requestChanges() {
+    const message = prompt('What changes would you like to request for your diet plan?');
+    if (message === null) return;
+    
+    try {
+        const formData = new FormData();
+        formData.append('action', 'request_plan_change');
+        formData.append('message', message);
+        
+        const response = await fetch('user_handler.php', { method: 'POST', body: formData });
+        const data = await response.json();
+        
+        if (data.success) {
+            showNotification(data.message, 'success');
+        } else {
+            showNotification(data.message || 'Failed to send request', 'error');
+        }
+    } catch (error) {
+        showNotification('Failed to send request', 'error');
     }
+}
+
+function showNotification(message, type) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed; top: 20px; right: 20px; padding: 1rem 1.5rem;
+        border-radius: 0.375rem; color: white; font-weight: 500; z-index: 1000;
+        background: ${type === 'success' ? '#278b63' : type === 'error' ? '#dc2626' : '#3b82f6'};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    `;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
 }
 
 function viewAlternatives() {

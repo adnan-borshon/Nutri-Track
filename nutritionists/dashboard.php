@@ -3,6 +3,44 @@ $page_title = "Dashboard";
 require_once '../includes/session.php';
 checkAuth('nutritionist');
 $user = getCurrentUser();
+
+$db = getDB();
+$nutritionistId = $user['id'];
+
+// Get assigned users count
+$stmt = $db->prepare("SELECT COUNT(*) as count FROM users WHERE nutritionist_id = ? AND role = 'user'");
+$stmt->execute([$nutritionistId]);
+$assignedUsersCount = $stmt->fetch()['count'] ?? 0;
+
+// Get active diet plans count
+$stmt = $db->prepare("SELECT COUNT(*) as count FROM diet_plans WHERE nutritionist_id = ? AND status = 'active'");
+$stmt->execute([$nutritionistId]);
+$activePlansCount = $stmt->fetch()['count'] ?? 0;
+
+// Get unread messages count
+$stmt = $db->prepare("SELECT COUNT(*) as count FROM messages WHERE receiver_id = ? AND is_read = 0");
+$stmt->execute([$nutritionistId]);
+$unreadMessages = $stmt->fetch()['count'] ?? 0;
+
+// Get today's appointments count
+$stmt = $db->prepare("SELECT COUNT(*) as count FROM appointments WHERE nutritionist_id = ? AND DATE(appointment_date) = CURDATE()");
+$stmt->execute([$nutritionistId]);
+$todayAppointments = $stmt->fetch()['count'] ?? 0;
+
+// Get assigned users list (limit 4)
+$stmt = $db->prepare("SELECT id, name, email, goal, updated_at FROM users WHERE nutritionist_id = ? AND role = 'user' ORDER BY updated_at DESC LIMIT 4");
+$stmt->execute([$nutritionistId]);
+$assignedUsers = $stmt->fetchAll();
+
+// Get recent messages (pending chats)
+$stmt = $db->prepare("SELECT m.*, u.name as sender_name 
+                      FROM messages m 
+                      JOIN users u ON m.sender_id = u.id 
+                      WHERE m.receiver_id = ? 
+                      ORDER BY m.created_at DESC LIMIT 3");
+$stmt->execute([$nutritionistId]);
+$recentMessages = $stmt->fetchAll();
+
 include 'header.php';
 ?>
 
@@ -25,8 +63,8 @@ include 'header.php';
 </svg>
                 </div>
             </div>
-            <div class="stat-value">24</div>
-            <div class="stat-change positive">+4 this week</div>
+            <div class="stat-value"><?php echo $assignedUsersCount; ?></div>
+            <div class="stat-change positive">Active clients</div>
         </div>
         
         <div class="stat-card">
@@ -41,8 +79,8 @@ include 'header.php';
 </svg>
                 </div>
             </div>
-            <div class="stat-value">18</div>
-            <div class="stat-change positive">+8 this week</div>
+            <div class="stat-value"><?php echo $activePlansCount; ?></div>
+            <div class="stat-change positive">Active plans</div>
         </div>
         
         <div class="stat-card">
@@ -57,8 +95,8 @@ include 'header.php';
 </svg>
                 </div>
             </div>
-            <div class="stat-value">5</div>
-            <div class="stat-subtitle">2 unread</div>
+            <div class="stat-value"><?php echo $unreadMessages; ?></div>
+            <div class="stat-subtitle"><?php echo $unreadMessages; ?> unread</div>
         </div>
         
         <div class="stat-card">
@@ -73,8 +111,8 @@ include 'header.php';
 </svg>
                 </div>
             </div>
-            <div class="stat-value">3</div>
-            <div class="stat-subtitle">Next at 2:00 PM</div>
+            <div class="stat-value"><?php echo $todayAppointments; ?></div>
+            <div class="stat-subtitle">Today's appointments</div>
         </div>
     </div>
 

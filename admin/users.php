@@ -1,6 +1,17 @@
 <?php
 require_once '../includes/session.php';
 checkAuth('admin');
+
+$db = getDB();
+
+$stmt = $db->prepare("SELECT u.*, n.name AS nutritionist_name FROM users u LEFT JOIN users n ON u.nutritionist_id = n.id WHERE u.role = 'user' ORDER BY u.created_at DESC");
+$stmt->execute();
+$users = $stmt->fetchAll();
+
+$stmt = $db->prepare("SELECT id, name FROM users WHERE role = 'nutritionist' AND status = 'active' ORDER BY name ASC");
+$stmt->execute();
+$nutritionists = $stmt->fetchAll();
+
 include 'header.php';
 ?>
 
@@ -41,152 +52,38 @@ include 'header.php';
                         </tr>
                     </thead>
                     <tbody>
-                        <tr class="table-row">
+                        <?php foreach ($users as $u): ?>
+                        <tr class="table-row" data-user-id="<?php echo (int)$u['id']; ?>" data-nutritionist-id="<?php echo (int)($u['nutritionist_id'] ?? 0); ?>" data-weight="<?php echo htmlspecialchars((string)($u['weight'] ?? '')); ?>" data-height="<?php echo htmlspecialchars((string)($u['height'] ?? '')); ?>" data-age="<?php echo htmlspecialchars((string)($u['age'] ?? '')); ?>" data-health-conditions="<?php echo htmlspecialchars((string)($u['health_conditions'] ?? '')); ?>">
                             <td>
                                 <div class="user-info-cell">
-                                    <div class="user-avatar" onclick="showUserProfile(this)" style="cursor: pointer;">JD</div>
+                                    <div class="user-avatar" onclick="showUserProfile(this)" style="cursor: pointer;"><?php echo htmlspecialchars(getUserInitials($u['name'])); ?></div>
                                     <div class="user-details">
-                                        <h4 class="user-name">John Doe</h4>
-                                        <p class="user-email">john@example.com</p>
+                                        <h4 class="user-name"><?php echo htmlspecialchars($u['name']); ?></h4>
+                                        <p class="user-email"><?php echo htmlspecialchars($u['email']); ?></p>
                                     </div>
                                 </div>
                             </td>
-                            <td><span class="status-badge active">active</span></td>
-                            <td>Weight Loss</td>
-                            <td>Dr. Smith</td>
-                            <td>2024-01-15</td>
+                            <td><span class="status-badge <?php echo htmlspecialchars($u['status']); ?>"><?php echo htmlspecialchars($u['status']); ?></span></td>
+                            <td><?php echo htmlspecialchars($u['goal'] ?? ''); ?></td>
+                            <td class="<?php echo empty($u['nutritionist_name']) ? 'unassigned' : ''; ?>"><?php echo htmlspecialchars($u['nutritionist_name'] ?? 'Unassigned'); ?></td>
+                            <td><?php echo htmlspecialchars(date('Y-m-d', strtotime($u['created_at']))); ?></td>
                             <td>
                                 <div class="action-buttons">
                                     <button class="btn btn-outline btn-sm" onclick="viewUser(this)">
 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg> View
                                     </button>
-                                </div>
-                            </td>
-                        </tr>
-                
-                        <tr class="table-row">
-                            <td>
-                                <div class="user-info-cell">
-                                    <div class="user-avatar" onclick="showUserProfile(this)" style="cursor: pointer;">JS</div>
-                                    <div class="user-details">
-                                        <h4 class="user-name">Jane Smith</h4>
-                                        <p class="user-email">jane@example.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="status-badge active">active</span></td>
-                            <td>Maintain</td>
-                            <td>Dr. Chen</td>
-                            <td>2024-02-20</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn btn-outline btn-sm" onclick="viewUser(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg> View
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                
-                        <tr class="table-row">
-                            <td>
-                                <div class="user-info-cell">
-                                    <div class="user-avatar" onclick="showUserProfile(this)" style="cursor: pointer;">MJ</div>
-                                    <div class="user-details">
-                                        <h4 class="user-name">Mike Johnson</h4>
-                                        <p class="user-email">mike@example.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="status-badge pending">pending</span></td>
-                            <td>Build Muscle</td>
-                            <td class="unassigned">Unassigned</td>
-                            <td>2024-03-10</td>
-                            <td>
-                                <div class="action-buttons">
+                                    <?php if (($u['status'] ?? '') === 'pending'): ?>
                                     <button class="btn btn-primary btn-sm" onclick="approveUser(this)">
 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg> Approve
                                     </button>
+                                    <?php endif; ?>
                                     <button class="btn btn-outline btn-sm" onclick="assignUser(this)">
 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-user-plus" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M16 19h6" /><path d="M19 16v6" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4" /></svg> Assign
                                     </button>
                                 </div>
                             </td>
                         </tr>
-                
-                        <tr class="table-row">
-                            <td>
-                                <div class="user-info-cell">
-                                    <div class="user-avatar" onclick="showUserProfile(this)" style="cursor: pointer;">ED</div>
-                                    <div class="user-details">
-                                        <h4 class="user-name">Emily Davis</h4>
-                                        <p class="user-email">emily@example.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="status-badge active">active</span></td>
-                            <td>Weight Loss</td>
-                            <td>Dr. Smith</td>
-                            <td>2024-03-15</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn btn-outline btn-sm" onclick="viewUser(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg> View
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                
-                        <tr class="table-row">
-                            <td>
-                                <div class="user-info-cell">
-                                    <div class="user-avatar" onclick="showUserProfile(this)" style="cursor: pointer;">CW</div>
-                                    <div class="user-details">
-                                        <h4 class="user-name">Chris Wilson</h4>
-                                        <p class="user-email">chris@example.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="status-badge inactive">inactive</span></td>
-                            <td>Gain Weight</td>
-                            <td class="unassigned">Unassigned</td>
-                            <td>2024-01-05</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn btn-outline btn-sm" onclick="viewUser(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-eye" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 4 -5.4 6 -9 6c-3.6 0 -6.6 -2 -9 -6c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6" /></svg> View
-                                    </button>
-                                    <button class="btn btn-outline btn-sm" onclick="assignUser(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-user-plus" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M16 19h6" /><path d="M19 16v6" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4" /></svg> Assign
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                
-                        <tr class="table-row">
-                            <td>
-                                <div class="user-info-cell">
-                                    <div class="user-avatar" onclick="showUserProfile(this)" style="cursor: pointer;">SB</div>
-                                    <div class="user-details">
-                                        <h4 class="user-name">Sarah Brown</h4>
-                                        <p class="user-email">sarah@example.com</p>
-                                    </div>
-                                </div>
-                            </td>
-                            <td><span class="status-badge pending">pending</span></td>
-                            <td>Weight Loss</td>
-                            <td class="unassigned">Unassigned</td>
-                            <td>2024-03-20</td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button class="btn btn-primary btn-sm" onclick="approveUser(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-check" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l5 5l10 -10" /></svg> Approve
-                                    </button>
-                                    <button class="btn btn-outline btn-sm" onclick="assignUser(this)">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-user-plus" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 7a4 4 0 1 0 8 0a4 4 0 0 0 -8 0" /><path d="M16 19h6" /><path d="M19 16v6" /><path d="M6 21v-2a4 4 0 0 1 4 -4h4" /></svg> Assign
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
+                        <?php endforeach; ?>
                     </tbody>
                 </table>
             </div>
@@ -196,6 +93,8 @@ include 'header.php';
 
 <?php include 'footer.php'; ?>
 <script>
+const nutritionists = <?php echo json_encode($nutritionists); ?>;
+
 function showUserProfile(avatar) {
     const row = avatar.closest('tr');
     const userName = row.querySelector('.user-name').textContent;
@@ -204,6 +103,12 @@ function showUserProfile(avatar) {
     const nutritionist = row.cells[3].textContent;
     const joinDate = row.cells[4].textContent;
     const status = row.querySelector('.status-badge').textContent;
+    const userId = row.dataset.userId;
+    const nutritionistId = row.dataset.nutritionistId || '';
+    const weight = row.dataset.weight || '';
+    const height = row.dataset.height || '';
+    const age = row.dataset.age || '';
+    const healthConditions = row.dataset.healthConditions || '';
     
     const modal = document.createElement('div');
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; overflow-y: auto;';
@@ -269,21 +174,21 @@ function showUserProfile(avatar) {
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                             <div>
                                 <label style="display: block; font-weight: 500; font-size: 0.875rem; margin-bottom: 0.5rem; color: #374151;">Weight (kg)</label>
-                                <input type="text" value="70.5" readonly style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: #f9fafb;">
+                                <input type="text" value="${weight || '-'}" readonly style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: #f9fafb;">
                             </div>
                             <div>
                                 <label style="display: block; font-weight: 500; font-size: 0.875rem; margin-bottom: 0.5rem; color: #374151;">Height (cm)</label>
-                                <input type="text" value="175" readonly style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: #f9fafb;">
+                                <input type="text" value="${height || '-'}" readonly style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: #f9fafb;">
                             </div>
                         </div>
                         <div style="margin-bottom: 1rem;">
                             <label style="display: block; font-weight: 500; font-size: 0.875rem; margin-bottom: 0.5rem; color: #374151;">Age</label>
-                            <input type="text" value="28" readonly style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: #f9fafb;">
+                            <input type="text" value="${age || '-'}" readonly style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; background: #f9fafb;">
                         </div>
                         <div>
                             <label style="display: block; font-weight: 500; font-size: 0.875rem; margin-bottom: 0.5rem; color: #374151;">Health Conditions</label>
                             <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
-                                <div style="padding: 0.25rem 0.75rem; background: #dcfce7; color: #278b63; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">None reported</div>
+                                <div style="padding: 0.25rem 0.75rem; background: #dcfce7; color: #278b63; border-radius: 9999px; font-size: 0.75rem; font-weight: 500;">${healthConditions || 'None reported'}</div>
                             </div>
                         </div>
                     </div>
@@ -292,7 +197,7 @@ function showUserProfile(avatar) {
             
             <div style="padding: 1rem 1.5rem 1.5rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end; gap: 0.75rem;">
                 <button onclick="closeUserProfile()" style="padding: 0.5rem 1rem; background: #6b7280; color: white; border: none; border-radius: 0.375rem; cursor: pointer;">Close</button>
-                <button onclick="editUserFromProfile('${userName}', '${userEmail}', '${goal}', '${nutritionist}', '${status}')" style="padding: 0.5rem 1rem; background: #278b63; color: white; border: none; border-radius: 0.375rem; cursor: pointer;">Edit User</button>
+                <button onclick="editUserFromProfile()" style="padding: 0.5rem 1rem; background: #278b63; color: white; border: none; border-radius: 0.375rem; cursor: pointer;">Edit User</button>
             </div>
         </div>
     `;
@@ -302,9 +207,9 @@ function showUserProfile(avatar) {
         document.body.removeChild(modal);
     };
     
-    window.editUserFromProfile = function(name, email, goal, nutritionist, status) {
+    window.editUserFromProfile = function() {
         closeUserProfile();
-        showEditUserModal(name, email, goal, nutritionist, status);
+        showEditUserModal(userId, userName, userEmail, goal, nutritionistId, status);
     };
 }
 
@@ -394,13 +299,15 @@ function viewUser(button) {
 
 function approveUser(button) {
     const row = button.closest('tr');
-    const userName = row.querySelector('.user-name').textContent;
-    const userId = row.dataset.userId || Math.floor(Math.random() * 1000);
+    const userId = row.dataset.userId;
+    if (!userId) {
+        showNotification('Missing user ID', 'error');
+        return;
+    }
     
     const formData = new FormData();
     formData.append('action', 'approve_user');
     formData.append('user_id', userId);
-    formData.append('user_name', userName);
     
     fetch('admin_handler.php', {
         method: 'POST',
@@ -422,21 +329,27 @@ function approveUser(button) {
 
 function assignUser(button) {
     const row = button.closest('tr');
-    const userName = row.querySelector('.user-name').textContent;
-    const userId = row.dataset.userId || Math.floor(Math.random() * 1000);
+    const userId = row.dataset.userId;
+    const currentNutritionistId = row.dataset.nutritionistId || '';
+    if (!userId) {
+        showNotification('Missing user ID', 'error');
+        return;
+    }
+
+    const nutritionistOptions = ['<option value="">Unassigned</option>']
+        .concat(nutritionists.map(n => `<option value="${n.id}" ${String(n.id) === String(currentNutritionistId) ? 'selected' : ''}>${n.name}</option>`))
+        .join('');
     
     const modal = document.createElement('div');
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;';
     modal.innerHTML = `
         <div style="background: white; border-radius: 0.75rem; padding: 2rem; max-width: 400px; width: 90%;">
-            <h3 style="margin: 0 0 1rem 0;">Assign Nutritionist to ${userName}</h3>
+            <h3 style="margin: 0 0 1rem 0;">Assign Nutritionist</h3>
             <form id="assignForm">
                 <div style="margin-bottom: 1rem;">
                     <label style="display: block; margin-bottom: 0.5rem;">Select Nutritionist:</label>
-                    <select name="nutritionist_id" required style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
-                        <option value="1">Dr. Sarah Smith</option>
-                        <option value="2">Dr. Michael Chen</option>
-                        <option value="3">Dr. Emily Wilson</option>
+                    <select name="nutritionist_id" style="width: 100%; padding: 0.5rem; border: 1px solid #ddd; border-radius: 0.25rem;">
+                        ${nutritionistOptions}
                     </select>
                 </div>
                 <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
@@ -453,7 +366,6 @@ function assignUser(button) {
         const formData = new FormData(this);
         formData.append('action', 'assign_nutritionist');
         formData.append('user_id', userId);
-        formData.append('user_name', userName);
         
         fetch('admin_handler.php', {
             method: 'POST',
@@ -465,8 +377,17 @@ function assignUser(button) {
                 showNotification(data.message, 'success');
                 closeAssignModal();
                 const nutritionistCell = row.cells[3];
-                nutritionistCell.textContent = 'Dr. Sarah Smith';
-                nutritionistCell.classList.remove('unassigned');
+                const selectedId = formData.get('nutritionist_id');
+                const selectedNutritionist = nutritionists.find(n => String(n.id) === String(selectedId));
+                if (selectedNutritionist) {
+                    nutritionistCell.textContent = selectedNutritionist.name;
+                    nutritionistCell.classList.remove('unassigned');
+                    row.dataset.nutritionistId = selectedId;
+                } else {
+                    nutritionistCell.textContent = 'Unassigned';
+                    nutritionistCell.classList.add('unassigned');
+                    row.dataset.nutritionistId = '';
+                }
             } else {
                 showNotification(data.message, 'error');
             }
@@ -505,9 +426,14 @@ function showNotification(message, type = 'info') {
     setTimeout(() => notification.remove(), 3000);
 }
 
-function showEditUserModal(name, email, goal, nutritionist, status) {
+function showEditUserModal(userId, name, email, goal, nutritionistId, status) {
     const modal = document.createElement('div');
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; overflow-y: auto;';
+
+    const nutritionistOptions = ['<option value="">Unassigned</option>']
+        .concat(nutritionists.map(n => `<option value="${n.id}" ${String(n.id) === String(nutritionistId) ? 'selected' : ''}>${n.name}</option>`))
+        .join('');
+
     modal.innerHTML = `
         <div style="background: white; border-radius: 0.75rem; max-width: 500px; width: 90%; margin: 2rem;">
             <div style="padding: 1.5rem; border-bottom: 1px solid #e5e7eb; display: flex; justify-content: space-between; align-items: center;">
@@ -516,6 +442,7 @@ function showEditUserModal(name, email, goal, nutritionist, status) {
             </div>
             
             <form id="editUserForm" style="padding: 1.5rem;">
+                <input type="hidden" name="user_id" value="${userId}">
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <div>
                         <label style="display: block; font-weight: 500; font-size: 0.875rem; margin-bottom: 0.5rem; color: #374151;">Full Name</label>
@@ -549,11 +476,8 @@ function showEditUserModal(name, email, goal, nutritionist, status) {
                 
                 <div style="margin-bottom: 1rem;">
                     <label style="display: block; font-weight: 500; font-size: 0.875rem; margin-bottom: 0.5rem; color: #374151;">Assigned Nutritionist</label>
-                    <select name="nutritionist" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;">
-                        <option value="Unassigned" ${nutritionist === 'Unassigned' ? 'selected' : ''}>Unassigned</option>
-                        <option value="Dr. Smith" ${nutritionist === 'Dr. Smith' ? 'selected' : ''}>Dr. Sarah Smith</option>
-                        <option value="Dr. Chen" ${nutritionist === 'Dr. Chen' ? 'selected' : ''}>Dr. Michael Chen</option>
-                        <option value="Dr. Wilson" ${nutritionist === 'Dr. Wilson' ? 'selected' : ''}>Dr. Emily Wilson</option>
+                    <select name="nutritionist_id" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem;">
+                        ${nutritionistOptions}
                     </select>
                 </div>
                 
@@ -570,7 +494,6 @@ function showEditUserModal(name, email, goal, nutritionist, status) {
         e.preventDefault();
         const formData = new FormData(this);
         formData.append('action', 'edit_user');
-        formData.append('original_name', name);
         
         const submitBtn = this.querySelector('button[type="submit"]');
         const originalText = submitBtn.textContent;
@@ -587,7 +510,7 @@ function showEditUserModal(name, email, goal, nutritionist, status) {
                 showNotification(data.message || 'User updated successfully!', 'success');
                 closeEditModal();
                 // Update the table row with new data
-                updateUserRow(name, formData);
+                updateUserRow(userId, formData);
             } else {
                 showNotification(data.message || 'Failed to update user', 'error');
             }
@@ -607,11 +530,10 @@ function showEditUserModal(name, email, goal, nutritionist, status) {
     };
 }
 
-function updateUserRow(originalName, formData) {
+function updateUserRow(userId, formData) {
     const rows = document.querySelectorAll('.table-row');
     rows.forEach(row => {
-        const userName = row.querySelector('.user-name').textContent;
-        if (userName === originalName) {
+        if (String(row.dataset.userId) === String(userId)) {
             // Update user name and email
             row.querySelector('.user-name').textContent = formData.get('name');
             row.querySelector('.user-email').textContent = formData.get('email');
@@ -620,11 +542,16 @@ function updateUserRow(originalName, formData) {
             row.cells[2].textContent = formData.get('goal');
             
             // Update nutritionist
-            row.cells[3].textContent = formData.get('nutritionist');
-            if (formData.get('nutritionist') === 'Unassigned') {
-                row.cells[3].classList.add('unassigned');
-            } else {
+            const selectedId = formData.get('nutritionist_id');
+            const selectedNutritionist = nutritionists.find(n => String(n.id) === String(selectedId));
+            if (selectedNutritionist) {
+                row.cells[3].textContent = selectedNutritionist.name;
                 row.cells[3].classList.remove('unassigned');
+                row.dataset.nutritionistId = selectedId;
+            } else {
+                row.cells[3].textContent = 'Unassigned';
+                row.cells[3].classList.add('unassigned');
+                row.dataset.nutritionistId = '';
             }
             
             // Update status

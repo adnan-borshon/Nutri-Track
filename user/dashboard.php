@@ -3,23 +3,81 @@ $page_title = "Dashboard";
 require_once '../includes/session.php';
 checkAuth('user');
 $user = getCurrentUser();
-include 'header.php';
 
-$caloriesConsumed = 890;
-$caloriesTarget = 1800;
-$waterConsumed = 5;
+$db = getDB();
+$today = date('Y-m-d');
+$userId = $user['id'];
+
+// Get today's calories from meal logs
+$stmt = $db->prepare("SELECT SUM(f.calories) as total_calories 
+                      FROM meal_logs ml 
+                      JOIN foods f ON ml.food_id = f.id 
+                      WHERE ml.user_id = ? AND ml.log_date = ?");
+$stmt->execute([$userId, $today]);
+$caloriesData = $stmt->fetch();
+$caloriesConsumed = $caloriesData['total_calories'] ?? 0;
+
+// Get calorie goal from diet plan
+$stmt = $db->prepare("SELECT daily_calories FROM diet_plans WHERE user_id = ? AND status = 'active' ORDER BY created_at DESC LIMIT 1");
+$stmt->execute([$userId]);
+$dietPlan = $stmt->fetch();
+$caloriesTarget = $dietPlan['daily_calories'] ?? 2000;
+
+// Get today's water intake
+$stmt = $db->prepare("SELECT glasses FROM water_logs WHERE user_id = ? AND log_date = ?");
+$stmt->execute([$userId, $today]);
+$waterData = $stmt->fetch();
+$waterConsumed = $waterData['glasses'] ?? 0;
 $waterTarget = 8;
-$sleepHours = 7.5;
+
+// Get last night's sleep
+$stmt = $db->prepare("SELECT hours FROM sleep_logs WHERE user_id = ? AND log_date = ? ORDER BY id DESC LIMIT 1");
+$stmt->execute([$userId, date('Y-m-d', strtotime('-1 day'))]);
+$sleepData = $stmt->fetch();
+$sleepHours = $sleepData['hours'] ?? 0;
 $sleepTarget = 8;
-$currentWeight = 81.7;
 
-$todaysMeals = [
-    ['type' => 'Breakfast', 'name' => 'Oatmeal with berries', 'calories' => 320, 'time' => '8:00 AM'],
-    ['type' => 'Lunch', 'name' => 'Grilled chicken salad', 'calories' => 450, 'time' => '12:30 PM'],
-    ['type' => 'Snack', 'name' => 'Greek yogurt', 'calories' => 120, 'time' => '3:00 PM']
-];
+// Get current weight from weight logs or user profile
+$stmt = $db->prepare("SELECT weight FROM weight_logs WHERE user_id = ? ORDER BY log_date DESC, created_at DESC LIMIT 1");
+$stmt->execute([$userId]);
+$weightLog = $stmt->fetch();
+$currentWeight = $weightLog['weight'] ?? ($user['weight'] ?? 70);
 
-$weightData = [81.7, 81.8, 82.0, 82.1, 82.4, 82.3, 82.5];
+// Get today's meals from database
+$stmt = $db->prepare("SELECT ml.meal_type as type, f.name, f.calories, ml.created_at 
+                      FROM meal_logs ml 
+                      JOIN foods f ON ml.food_id = f.id 
+                      WHERE ml.user_id = ? AND ml.log_date = ? 
+                      ORDER BY ml.created_at DESC LIMIT 5");
+$stmt->execute([$userId, $today]);
+$todaysMeals = $stmt->fetchAll();
+
+// Format meals for display
+$formattedMeals = [];
+foreach ($todaysMeals as $meal) {
+    $formattedMeals[] = [
+        'type' => ucfirst($meal['type'] ?? 'Meal'),
+        'name' => $meal['name'],
+        'calories' => $meal['calories'],
+        'time' => date('g:i A', strtotime($meal['created_at']))
+    ];
+}
+if (empty($formattedMeals)) {
+    $formattedMeals = [['type' => 'No meals', 'name' => 'Log your first meal today', 'calories' => 0, 'time' => '-']];
+}
+$todaysMeals = $formattedMeals;
+
+// Get weekly weight data
+$weightData = [];
+for ($i = 6; $i >= 0; $i--) {
+    $date = date('Y-m-d', strtotime("-$i days"));
+    $stmt = $db->prepare("SELECT weight FROM weight_logs WHERE user_id = ? AND log_date = ? ORDER BY created_at DESC LIMIT 1");
+    $stmt->execute([$userId, $date]);
+    $dayWeight = $stmt->fetch();
+    $weightData[] = $dayWeight['weight'] ?? $currentWeight;
+}
+
+include 'header.php';
 ?>
 
 <div class="space-y-6">
@@ -160,7 +218,8 @@ $weightData = [81.7, 81.8, 82.0, 82.1, 82.4, 82.3, 82.5];
                 <div class="chart-container">
                     <?php foreach ($weightData as $i => $weight): ?>
                         <div class="chart-bar">
-                            <div class="chart-bar-fill" style="height: <?php echo ($weight - 81) * 50; ?>px; background: #16a34a;"></div>
+                            <?php $minWeight = min($weightData) - 2; $maxWeight = max($weightData) + 2; $range = $maxWeight - $minWeight ?: 1; ?>
+                            <div class="chart-bar-fill" style="height: <?php echo max(20, (($weight - $minWeight) / $range) * 150); ?>px; background: #16a34a;"></div>
                             <span class="chart-label"><?php echo ['M','T','W','T','F','S','S'][$i]; ?></span>
                         </div>
                     <?php endforeach; ?>

@@ -3,6 +3,86 @@ $page_title = "Settings";
 require_once '../includes/session.php';
 checkAuth('user');
 $user = getCurrentUser();
+
+// Handle form submission
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    $db = getDB();
+    
+    if ($_POST['action'] === 'update_profile') {
+        $name = trim($_POST['name'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
+        
+        if (empty($name) || empty($email)) {
+            echo json_encode(['success' => false, 'message' => 'Name and email are required']);
+            exit;
+        }
+        
+        // Check if email exists for another user
+        $stmt = $db->prepare("SELECT id FROM users WHERE email = ? AND id != ?");
+        $stmt->execute([$email, $user['id']]);
+        if ($stmt->fetch()) {
+            echo json_encode(['success' => false, 'message' => 'Email already in use']);
+            exit;
+        }
+        
+        $stmt = $db->prepare("UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?");
+        $stmt->execute([$name, $email, $phone, $user['id']]);
+        $_SESSION['user_name'] = $name;
+        
+        echo json_encode(['success' => true, 'message' => 'Profile updated successfully']);
+        exit;
+    }
+    
+    if ($_POST['action'] === 'update_health') {
+        $weight = floatval($_POST['weight'] ?? 0);
+        $height = floatval($_POST['height'] ?? 0);
+        $age = intval($_POST['age'] ?? 0);
+        $conditions = $_POST['conditions'] ?? '';
+        
+        $stmt = $db->prepare("UPDATE users SET weight = ?, height = ?, age = ?, health_conditions = ? WHERE id = ?");
+        $stmt->execute([$weight ?: null, $height ?: null, $age ?: null, $conditions, $user['id']]);
+        
+        echo json_encode(['success' => true, 'message' => 'Health information saved']);
+        exit;
+    }
+    
+    if ($_POST['action'] === 'update_password') {
+        $current = $_POST['current_password'] ?? '';
+        $new = $_POST['new_password'] ?? '';
+        $confirm = $_POST['confirm_password'] ?? '';
+        
+        if ($new !== $confirm) {
+            echo json_encode(['success' => false, 'message' => 'Passwords do not match']);
+            exit;
+        }
+        
+        $stmt = $db->prepare("SELECT password FROM users WHERE id = ?");
+        $stmt->execute([$user['id']]);
+        $userData = $stmt->fetch();
+        
+        if (!password_verify($current, $userData['password'])) {
+            echo json_encode(['success' => false, 'message' => 'Current password is incorrect']);
+            exit;
+        }
+        
+        $stmt = $db->prepare("UPDATE users SET password = ? WHERE id = ?");
+        $stmt->execute([password_hash($new, PASSWORD_DEFAULT), $user['id']]);
+        
+        echo json_encode(['success' => true, 'message' => 'Password updated successfully']);
+        exit;
+    }
+    
+    if ($_POST['action'] === 'delete_account') {
+        $stmt = $db->prepare("DELETE FROM users WHERE id = ?");
+        $stmt->execute([$user['id']]);
+        session_destroy();
+        echo json_encode(['success' => true, 'message' => 'Account deleted', 'redirect' => '../landing page/login.php']);
+        exit;
+    }
+}
+
 include 'header.php';
 ?>
 
@@ -22,15 +102,15 @@ include 'header.php';
                 <div class="form">
                     <div class="form-group">
                         <label class="form-label">Full Name</label>
-                        <input type="text" value="<?php echo htmlspecialchars($user['name']); ?>" class="form-input">
+                        <input type="text" id="profileName" value="<?php echo htmlspecialchars($user['name']); ?>" class="form-input">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Email</label>
-                        <input type="email" value="<?php echo htmlspecialchars($user['email']); ?>" class="form-input">
+                        <input type="email" id="profileEmail" value="<?php echo htmlspecialchars($user['email']); ?>" class="form-input">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Phone</label>
-                        <input type="tel" value="+1 (555) 123-4567" class="form-input">
+                        <input type="tel" id="profilePhone" value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" class="form-input">
                     </div>
                     <button class="btn btn-primary" id="updateProfileBtn">Update Profile</button>
                 </div>
@@ -39,15 +119,25 @@ include 'header.php';
 
         <div class="card">
             <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb;">
-                <h3 class="card-title">Account Actions</h3>
+                <h3 class="card-title">Change Password</h3>
             </div>
             <div class="card-content">
                 <div class="form">
-                    <div style="display: flex; flex-direction: column; gap: 1rem;">
-                        <button class="btn btn-outline">Change Password</button>
-                        <button class="btn btn-outline">Export Data</button>
-                        <button class="btn btn-outline" style="color: #ef4444; border-color: #ef4444;">Delete Account</button>
+                    <div class="form-group">
+                        <label class="form-label">Current Password</label>
+                        <input type="password" id="currentPassword" class="form-input">
                     </div>
+                    <div class="form-group">
+                        <label class="form-label">New Password</label>
+                        <input type="password" id="newPassword" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" id="confirmPassword" class="form-input">
+                    </div>
+                    <button class="btn btn-primary" id="updatePasswordBtn">Update Password</button>
+                    <hr style="margin: 1rem 0; border: none; border-top: 1px solid #e5e7eb;">
+                    <button class="btn btn-outline" id="deleteAccountBtn" style="color: #ef4444; border-color: #ef4444; width: 100%;">Delete Account</button>
                 </div>
             </div>
         </div>
@@ -130,7 +220,6 @@ document.querySelectorAll('.condition-checkbox input[type="checkbox"]').forEach(
     checkbox.addEventListener('change', function() {
         const condition = this.value;
         const conditionName = this.nextElementSibling.textContent;
-        
         if (this.checked) {
             if (!selectedConditions.find(c => c.value === condition)) {
                 selectedConditions.push({ value: condition, name: conditionName });
@@ -138,7 +227,6 @@ document.querySelectorAll('.condition-checkbox input[type="checkbox"]').forEach(
         } else {
             selectedConditions = selectedConditions.filter(c => c.value !== condition);
         }
-        
         updateSelectedConditions();
     });
 });
@@ -146,94 +234,127 @@ document.querySelectorAll('.condition-checkbox input[type="checkbox"]').forEach(
 function updateSelectedConditions() {
     const container = document.getElementById('selectedConditions');
     container.innerHTML = '';
-    
     selectedConditions.forEach(condition => {
         const tag = document.createElement('div');
         tag.className = 'condition-tag';
-        tag.innerHTML = `
-            <span>${condition.name}</span>
-            <button onclick="removeCondition('${condition.value}')">&times;</button>
-        `;
+        tag.innerHTML = `<span>${condition.name}</span><button onclick="removeCondition('${condition.value}')">&times;</button>`;
         container.appendChild(tag);
     });
 }
 
 function removeCondition(conditionValue) {
-    // Uncheck the checkbox
     const checkbox = document.querySelector(`input[value="${conditionValue}"]`);
     if (checkbox) checkbox.checked = false;
-    
-    // Remove from selected conditions
     selectedConditions = selectedConditions.filter(c => c.value !== conditionValue);
     updateSelectedConditions();
 }
 
-document.getElementById('saveHealthBtn').addEventListener('click', function(e) {
+// Update Profile
+document.getElementById('updateProfileBtn').addEventListener('click', async function(e) {
+    e.preventDefault();
+    const name = document.getElementById('profileName').value.trim();
+    const email = document.getElementById('profileEmail').value.trim();
+    const phone = document.getElementById('profilePhone').value.trim();
+    
+    if (!name || !email) {
+        showNotification('Name and email are required', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'update_profile');
+    formData.append('name', name);
+    formData.append('email', email);
+    formData.append('phone', phone);
+    
+    try {
+        const response = await fetch('settings.php', { method: 'POST', body: formData });
+        const data = await response.json();
+        showNotification(data.message, data.success ? 'success' : 'error');
+        if (data.success) setTimeout(() => location.reload(), 1000);
+    } catch (error) {
+        showNotification('Failed to update profile', 'error');
+    }
+});
+
+// Update Password
+document.getElementById('updatePasswordBtn').addEventListener('click', async function(e) {
+    e.preventDefault();
+    const current = document.getElementById('currentPassword').value;
+    const newPass = document.getElementById('newPassword').value;
+    const confirm = document.getElementById('confirmPassword').value;
+    
+    if (!current || !newPass || !confirm) {
+        showNotification('All password fields are required', 'error');
+        return;
+    }
+    if (newPass !== confirm) {
+        showNotification('Passwords do not match', 'error');
+        return;
+    }
+    
+    const formData = new FormData();
+    formData.append('action', 'update_password');
+    formData.append('current_password', current);
+    formData.append('new_password', newPass);
+    formData.append('confirm_password', confirm);
+    
+    try {
+        const response = await fetch('settings.php', { method: 'POST', body: formData });
+        const data = await response.json();
+        showNotification(data.message, data.success ? 'success' : 'error');
+        if (data.success) {
+            document.getElementById('currentPassword').value = '';
+            document.getElementById('newPassword').value = '';
+            document.getElementById('confirmPassword').value = '';
+        }
+    } catch (error) {
+        showNotification('Failed to update password', 'error');
+    }
+});
+
+// Save Health Information
+document.getElementById('saveHealthBtn').addEventListener('click', async function(e) {
     e.preventDefault();
     const weight = document.getElementById('weight').value;
     const height = document.getElementById('height').value;
     const age = document.getElementById('age').value;
-    const otherConditions = document.getElementById('otherConditions').value;
+    const conditions = selectedConditions.map(c => c.value).join(',');
     
-    let isValid = true;
+    const formData = new FormData();
+    formData.append('action', 'update_health');
+    formData.append('weight', weight);
+    formData.append('height', height);
+    formData.append('age', age);
+    formData.append('conditions', conditions);
     
-    // Basic validation
-    if (weight && (isNaN(weight) || weight <= 0 || weight > 500)) {
-        document.getElementById('weight').style.borderColor = '#dc2626';
-        isValid = false;
-    } else {
-        document.getElementById('weight').style.borderColor = '#d1d5db';
-    }
-    
-    if (height && (isNaN(height) || height <= 0 || height > 300)) {
-        document.getElementById('height').style.borderColor = '#dc2626';
-        isValid = false;
-    } else {
-        document.getElementById('height').style.borderColor = '#d1d5db';
-    }
-    
-    if (age && (isNaN(age) || age <= 0 || age > 120)) {
-        document.getElementById('age').style.borderColor = '#dc2626';
-        isValid = false;
-    } else {
-        document.getElementById('age').style.borderColor = '#d1d5db';
-    }
-    
-    if (isValid) {
-        const healthData = {
-            weight: weight,
-            height: height,
-            age: age,
-            conditions: selectedConditions,
-            otherConditions: otherConditions
-        };
-        
-        console.log('Health data to save:', healthData);
-        showNotification('Health information saved successfully!', 'success');
-    } else {
-        showNotification('Please enter valid health information', 'error');
+    try {
+        const response = await fetch('settings.php', { method: 'POST', body: formData });
+        const data = await response.json();
+        showNotification(data.message, data.success ? 'success' : 'error');
+    } catch (error) {
+        showNotification('Failed to save health information', 'error');
     }
 });
 
-document.getElementById('updateProfileBtn').addEventListener('click', function(e) {
+// Delete Account
+document.getElementById('deleteAccountBtn').addEventListener('click', async function(e) {
     e.preventDefault();
-    const form = this.closest('.card');
-    const inputs = form.querySelectorAll('input[required]');
-    let isValid = true;
+    if (!confirm('Are you sure you want to delete your account? This action cannot be undone.')) return;
     
-    inputs.forEach(input => {
-        if (!input.value.trim()) {
-            input.style.borderColor = '#dc2626';
-            isValid = false;
+    const formData = new FormData();
+    formData.append('action', 'delete_account');
+    
+    try {
+        const response = await fetch('settings.php', { method: 'POST', body: formData });
+        const data = await response.json();
+        if (data.success && data.redirect) {
+            window.location.href = data.redirect;
         } else {
-            input.style.borderColor = '#d1d5db';
+            showNotification(data.message, 'error');
         }
-    });
-    
-    if (isValid) {
-        showNotification('Profile updated successfully!', 'success');
-    } else {
-        showNotification('Please fill in all required fields', 'error');
+    } catch (error) {
+        showNotification('Failed to delete account', 'error');
     }
 });
 
