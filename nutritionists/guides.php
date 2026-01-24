@@ -21,9 +21,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             exit;
         }
         
+        $imagePath = null;
+        if (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = '../uploads/guides/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            
+            $fileExtension = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+            
+            if (in_array($fileExtension, $allowedExtensions)) {
+                $fileName = uniqid() . '.' . $fileExtension;
+                $uploadPath = $uploadDir . $fileName;
+                
+                if (move_uploaded_file($_FILES['image']['tmp_name'], $uploadPath)) {
+                    $imagePath = 'uploads/guides/' . $fileName;
+                }
+            }
+        }
+        
         try {
-            $stmt = $db->prepare("INSERT INTO nutrition_guides (nutritionist_id, title, content, category, difficulty, read_time) VALUES (?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$currentUser['id'], $title, $content, $category, $difficulty, $readTime]);
+            $stmt = $db->prepare("INSERT INTO nutrition_guides (nutritionist_id, title, content, image_path, category, difficulty, read_time) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$currentUser['id'], $title, $content, $imagePath, $category, $difficulty, $readTime]);
             echo json_encode(['success' => true, 'message' => 'Guide created successfully']);
         } catch (PDOException $e) {
             error_log("Add guide error: " . $e->getMessage());
@@ -144,10 +164,14 @@ function showCreateGuideModal() {
                 <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Create Nutrition Guide</h3>
                 <button onclick="closeGuideModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
             </div>
-            <form id="addGuideForm">
+            <form id="addGuideForm" enctype="multipart/form-data">
                 <div style="margin-bottom: 1rem;">
                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Title</label>
                     <input type="text" name="title" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Featured Image</label>
+                    <input type="file" name="image" accept="image/*" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <div>
@@ -176,7 +200,7 @@ function showCreateGuideModal() {
                 </div>
                 <div style="margin-bottom: 1rem;">
                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Content</label>
-                    <textarea name="content" rows="6" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"></textarea>
+                    <textarea name="content" rows="8" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;"></textarea>
                 </div>
                 <div style="display: flex; gap: 1rem; justify-content: flex-end;">
                     <button type="button" onclick="closeGuideModal()" style="padding: 0.5rem 1rem; border: 1px solid #d1d5db; background: white; border-radius: 0.375rem; cursor: pointer;">Cancel</button>

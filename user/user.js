@@ -100,13 +100,15 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Add meal buttons (+ icons in meal cards)
-        document.querySelectorAll('.btn-add-meal').forEach(btn => {
-            btn.addEventListener('click', function() {
-                const mealType = this.closest('.card').querySelector('.meal-type').textContent.toLowerCase();
-                showAddFoodModal(mealType);
+        // Add meal buttons (+ icons in meal cards) - Skip if on meals.php
+        if (!window.location.pathname.includes('meals.php')) {
+            document.querySelectorAll('.btn-add-meal').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const mealType = this.closest('.card').querySelector('.meal-type').textContent.toLowerCase();
+                    showAddFoodModal(mealType);
+                });
             });
-        });
+        }
 
         // Remove meal buttons
         document.querySelectorAll('.btn-remove-meal').forEach(btn => {
@@ -477,44 +479,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showNotifications() {
-        const modalContent = `
-            <div class="admin-activity-list">
-                <div class="admin-activity-item">
-                    <div class="admin-activity-info">
-                        <div class="admin-activity-dot"></div>
-                        <div>
-                            <p class="admin-activity-title">Meal reminder</p>
-                            <p class="admin-activity-subtitle">Time to log your lunch!</p>
-                        </div>
-                    </div>
-                    <span class="admin-activity-time">5 min ago</span>
-                </div>
-                <div class="admin-activity-item">
-                    <div class="admin-activity-info">
-                        <div class="admin-activity-dot"></div>
-                        <div>
-                            <p class="admin-activity-title">Water reminder</p>
-                            <p class="admin-activity-subtitle">Stay hydrated! Drink some water.</p>
-                        </div>
-                    </div>
-                    <span class="admin-activity-time">1 hour ago</span>
-                </div>
-                <div class="admin-activity-item">
-                    <div class="admin-activity-info">
-                        <div class="admin-activity-dot"></div>
-                        <div>
-                            <p class="admin-activity-title">Appointment reminder</p>
-                            <p class="admin-activity-subtitle">Meeting with Dr. Smith tomorrow at 2:00 PM</p>
-                        </div>
-                    </div>
-                    <span class="admin-activity-time">2 hours ago</span>
-                </div>
-            </div>
-        `;
-
-        const modalHTML = createModal('notificationsModal', 'Notifications', modalContent);
-        document.getElementById('modal-container').innerHTML = modalHTML;
-        showModal('notificationsModal');
+        // This function is no longer needed - notifications are handled by the header dropdown
+        console.log('Notifications are handled by the header dropdown');
     }
 
     // Form Submission Functions

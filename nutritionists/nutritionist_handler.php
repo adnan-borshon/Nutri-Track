@@ -1,6 +1,7 @@
 <?php
 // Nutritionist Actions Handler
 require_once '../includes/session.php';
+require_once '../includes/notifications.php';
 
 header('Content-Type: application/json');
 
@@ -65,6 +66,9 @@ switch ($action) {
         break;
     case 'update_appointment_status':
         handleUpdateAppointmentStatus($nutritionistId);
+        break;
+    case 'get_meal_plan':
+        handleGetMealPlan($nutritionistId);
         break;
     default:
         sendResponse(false, 'Invalid action specified');
@@ -134,6 +138,27 @@ function handleEditDietPlan($nutritionistId) {
         
         $stmt = $db->prepare("UPDATE diet_plans SET name = ?, description = ?, daily_calories = ?, duration_weeks = ?, status = ? WHERE id = ?");
         $stmt->execute([$planName, $description, $calories, $duration, $status, $planId]);
+        
+        // Handle meal plan data
+        $days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+        
+        // Delete existing meal plan data
+        $stmt = $db->prepare("DELETE FROM diet_plan_meals WHERE diet_plan_id = ?");
+        $stmt->execute([$planId]);
+        
+        // Insert new meal plan data
+        foreach ($days as $day) {
+            foreach ($mealTypes as $mealType) {
+                $mealKey = "meal_{$day}_{$mealType}";
+                $mealItems = sanitize($_POST[$mealKey] ?? '');
+                
+                if (!empty($mealItems)) {
+                    $stmt = $db->prepare("INSERT INTO diet_plan_meals (diet_plan_id, day_of_week, meal_type, meal_items) VALUES (?, ?, ?, ?)");
+                    $stmt->execute([$planId, $day, $mealType, $mealItems]);
+                }
+            }
+        }
         
         sendResponse(true, 'Diet plan updated successfully');
     } catch (PDOException $e) {
@@ -563,6 +588,38 @@ function handleUpdateAppointmentStatus($nutritionistId) {
         sendResponse(true, $statusMessage);
     } catch (PDOException $e) {
         error_log("Update appointment status error: " . $e->getMessage());
+        sendResponse(false, 'Database error occurred');
+    }
+}
+
+// =============================================
+// MEAL PLAN FUNCTIONS
+// =============================================
+
+function handleGetMealPlan($nutritionistId) {
+    $planId = intval($_GET['planId'] ?? 0);
+    
+    if ($planId <= 0) {
+        sendResponse(false, 'Invalid plan ID');
+    }
+    
+    try {
+        $db = getDB();
+        
+        // Verify plan belongs to this nutritionist
+        $stmt = $db->prepare("SELECT id FROM diet_plans WHERE id = ? AND nutritionist_id = ?");
+        $stmt->execute([$planId, $nutritionistId]);
+        if (!$stmt->fetch()) {
+            sendResponse(false, 'Diet plan not found');
+        }
+        
+        $stmt = $db->prepare("SELECT day_of_week, meal_type, meal_items FROM diet_plan_meals WHERE diet_plan_id = ?");
+        $stmt->execute([$planId]);
+        $meals = $stmt->fetchAll();
+        
+        sendResponse(true, 'Meal plan retrieved', ['meals' => $meals]);
+    } catch (PDOException $e) {
+        error_log("Get meal plan error: " . $e->getMessage());
         sendResponse(false, 'Database error occurred');
     }
 }

@@ -1,6 +1,25 @@
 <?php
 $page_title = "About";
 include '../includes/header.php';
+require_once '../config/db.php';
+
+$db = getDB();
+
+// Get real stats from database
+$stmt = $db->query("SELECT COUNT(*) FROM users WHERE role = 'user'");
+$totalUsers = $stmt->fetchColumn();
+
+$stmt = $db->query("SELECT COUNT(*) FROM users WHERE role = 'nutritionist'");
+$totalNutritionists = $stmt->fetchColumn();
+
+$stmt = $db->query("SELECT COUNT(*) FROM meal_logs");
+$totalMeals = $stmt->fetchColumn();
+
+// Calculate satisfaction rate (users with recent activity)
+$stmt = $db->prepare("SELECT COUNT(DISTINCT user_id) FROM meal_logs WHERE log_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)");
+$stmt->execute();
+$activeUsers = $stmt->fetchColumn();
+$satisfactionRate = $totalUsers > 0 ? round(($activeUsers / $totalUsers) * 100) : 95;
 ?>
 
 <section class="section">
@@ -14,19 +33,19 @@ include '../includes/header.php';
 
         <div class="stats">
             <div class="stat-card">
-                <p class="stat-value">50K+</p>
+                <p class="stat-value"><?php echo number_format($totalUsers); ?>+</p>
                 <p class="stat-label">Active Users</p>
             </div>
             <div class="stat-card">
-                <p class="stat-value">200+</p>
+                <p class="stat-value"><?php echo number_format($totalNutritionists); ?>+</p>
                 <p class="stat-label">Certified Nutritionists</p>
             </div>
             <div class="stat-card">
-                <p class="stat-value">1M+</p>
+                <p class="stat-value"><?php echo number_format($totalMeals); ?>+</p>
                 <p class="stat-label">Meals Tracked</p>
             </div>
             <div class="stat-card">
-                <p class="stat-value">95%</p>
+                <p class="stat-value"><?php echo $satisfactionRate; ?>%</p>
                 <p class="stat-label">User Satisfaction</p>
             </div>
         </div>
@@ -42,7 +61,7 @@ include '../includes/header.php';
                         Founded in 2020, our platform bridges the gap between users and certified nutritionists, providing the tools and support needed for lasting health transformation. We combine cutting-edge technology with human expertise to deliver personalized nutrition plans that actually work.
                     </p>
                     <p>
-                        Today, we serve over 50,000 active users worldwide, partnering with 200+ certified nutritionists to make healthy living achievable for everyone.
+                        Today, we serve over <?php echo number_format($totalUsers); ?> active users worldwide, partnering with <?php echo $totalNutritionists; ?>+ certified nutritionists to make healthy living achievable for everyone.
                     </p>
                 </div>
             </div>

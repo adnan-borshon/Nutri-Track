@@ -115,13 +115,13 @@ include 'header.php';
                     <?php else: ?>
                     <?php foreach ($chatMessages as $msg): ?>
                     <?php if ($msg['sender_type'] === 'nutritionist'): ?>
-                    <div style="margin-bottom: 0.75rem; display: flex; flex-direction: column; align-items: flex-start;">
-                        <div style="background: #278b63; color: white; padding: 0.5rem 0.75rem; border-radius: 0.75rem; border-bottom-left-radius: 0.25rem; max-width: 70%; word-wrap: break-word; font-size: 0.875rem;"><?= htmlspecialchars($msg['message']) ?></div>
+                    <div style="margin-bottom: 0.75rem; display: flex; flex-direction: column; align-items: flex-end;">
+                        <div style="background: #278b63; color: white; padding: 0.5rem 0.75rem; border-radius: 0.75rem; border-bottom-right-radius: 0.25rem; max-width: 70%; word-wrap: break-word; font-size: 0.875rem;"><?= htmlspecialchars($msg['message']) ?></div>
                         <div style="font-size: 0.625rem; color: #6b7280; margin-top: 0.25rem; padding: 0 0.25rem;"><?= date('M j, g:i A', strtotime($msg['created_at'])) ?></div>
                     </div>
                     <?php else: ?>
-                    <div style="margin-bottom: 0.75rem; display: flex; flex-direction: column; align-items: flex-end;">
-                        <div style="background: white; color: #374151; padding: 0.5rem 0.75rem; border-radius: 0.75rem; border-bottom-right-radius: 0.25rem; max-width: 70%; word-wrap: break-word; font-size: 0.875rem; border: 1px solid #e5e7eb;"><?= htmlspecialchars($msg['message']) ?></div>
+                    <div style="margin-bottom: 0.75rem; display: flex; flex-direction: column; align-items: flex-start;">
+                        <div style="background: white; color: #374151; padding: 0.5rem 0.75rem; border-radius: 0.75rem; border-bottom-left-radius: 0.25rem; max-width: 70%; word-wrap: break-word; font-size: 0.875rem; border: 1px solid #e5e7eb;"><?= htmlspecialchars($msg['message']) ?></div>
                         <div style="font-size: 0.625rem; color: #6b7280; margin-top: 0.25rem; padding: 0 0.25rem;"><?= date('M j, g:i A', strtotime($msg['created_at'])) ?></div>
                     </div>
                     <?php endif; ?>
@@ -197,8 +197,8 @@ async function loadChatMessages(userId) {
                 messagesContainer.innerHTML = data.data.messages.map(msg => {
                     const isNutritionist = msg.sender_type === 'nutritionist';
                     return `
-                        <div style="margin-bottom: 0.75rem; display: flex; flex-direction: column; align-items: ${isNutritionist ? 'flex-start' : 'flex-end'};">
-                            <div style="background: ${isNutritionist ? '#278b63' : 'white'}; color: ${isNutritionist ? 'white' : '#374151'}; padding: 0.5rem 0.75rem; border-radius: 0.75rem; border-bottom-${isNutritionist ? 'left' : 'right'}-radius: 0.25rem; max-width: 70%; word-wrap: break-word; font-size: 0.875rem; ${!isNutritionist ? 'border: 1px solid #e5e7eb;' : ''}">${escapeHtml(msg.message)}</div>
+                        <div style="margin-bottom: 0.75rem; display: flex; flex-direction: column; align-items: ${isNutritionist ? 'flex-end' : 'flex-start'};">
+                            <div style="background: ${isNutritionist ? '#278b63' : 'white'}; color: ${isNutritionist ? 'white' : '#374151'}; padding: 0.5rem 0.75rem; border-radius: 0.75rem; border-bottom-${isNutritionist ? 'right' : 'left'}-radius: 0.25rem; max-width: 70%; word-wrap: break-word; font-size: 0.875rem; ${!isNutritionist ? 'border: 1px solid #e5e7eb;' : ''}">${escapeHtml(msg.message)}</div>
                             <div style="font-size: 0.625rem; color: #6b7280; margin-top: 0.25rem; padding: 0 0.25rem;">${formatTime(msg.created_at)}</div>
                         </div>
                     `;
@@ -267,9 +267,9 @@ async function sendChatMessage() {
             if (emptyMsg) emptyMsg.remove();
             
             const messageDiv = document.createElement('div');
-            messageDiv.style.cssText = 'margin-bottom: 0.75rem; display: flex; flex-direction: column; align-items: flex-start;';
+            messageDiv.style.cssText = 'margin-bottom: 0.75rem; display: flex; flex-direction: column; align-items: flex-end;';
             messageDiv.innerHTML = `
-                <div style="background: #278b63; color: white; padding: 0.5rem 0.75rem; border-radius: 0.75rem; border-bottom-left-radius: 0.25rem; max-width: 70%; word-wrap: break-word; font-size: 0.875rem;">${escapeHtml(message)}</div>
+                <div style="background: #278b63; color: white; padding: 0.5rem 0.75rem; border-radius: 0.75rem; border-bottom-right-radius: 0.25rem; max-width: 70%; word-wrap: break-word; font-size: 0.875rem;">${escapeHtml(message)}</div>
                 <div style="font-size: 0.625rem; color: #6b7280; margin-top: 0.25rem; padding: 0 0.25rem;">Just now</div>
             `;
             messagesContainer.appendChild(messageDiv);

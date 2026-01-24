@@ -18,46 +18,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function createModal(id, title, content, actions = '') {
-        return `
-            <div id="${id}" class="admin-modal" style="display: none;">
-                <div class="admin-modal-content">
-                    <div class="admin-modal-header">
-                        <h3 class="admin-modal-title">${title}</h3>
-                        <button class="admin-modal-close" onclick="closeModal('${id}')">&times;</button>
-                    </div>
-                    <div class="admin-modal-body">
-                        ${content}
-                    </div>
-                    ${actions ? `<div class="admin-modal-footer">${actions}</div>` : ''}
-                </div>
-            </div>
-        `;
-    }
-
-    function showModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    function closeModal(modalId) {
-        const modal = document.getElementById(modalId);
-        if (modal) {
-            modal.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
-    }
-
-    window.closeModal = closeModal;
-
     // Button Event Handlers
     function initializeButtons() {
-        // Create New Plan button
+        // Create New Plan button - Skip if on diet-plans page
         const createPlanBtn = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.includes('Create New Plan'));
-        if (createPlanBtn) {
+        if (createPlanBtn && !window.location.pathname.includes('diet-plans.php')) {
             createPlanBtn.addEventListener('click', showCreatePlanModal);
         }
 
@@ -67,9 +32,9 @@ document.addEventListener('DOMContentLoaded', function() {
             addSuggestionBtn.addEventListener('click', showAddSuggestionModal);
         }
 
-        // Edit buttons
+        // Edit buttons - Skip if on diet-plans page
         document.querySelectorAll('button').forEach(btn => {
-            if (btn.textContent.includes('Edit')) {
+            if (btn.textContent.includes('Edit') && !window.location.pathname.includes('diet-plans.php')) {
                 btn.addEventListener('click', function() {
                     const card = this.closest('.diet-plan-card');
                     if (card) {
@@ -79,9 +44,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // View buttons
+        // View buttons - Skip if on diet-plans page
         document.querySelectorAll('button, a').forEach(btn => {
-            if (btn.textContent.includes('View Details') || btn.textContent.includes('View')) {
+            if ((btn.textContent.includes('View Details') || btn.textContent.includes('View')) && !window.location.pathname.includes('diet-plans.php')) {
                 btn.addEventListener('click', function(e) {
                     if (this.href && this.href.includes('user-detail.php')) {
                         e.preventDefault();
@@ -95,9 +60,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        // Chat buttons
+        // Chat buttons - only intercept if not from users page
         document.querySelectorAll('a').forEach(link => {
-            if (link.href && link.href.includes('chat.php')) {
+            if (link.href && link.href.includes('chat.php') && !window.location.pathname.includes('users.php')) {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     const userId = new URL(this.href).searchParams.get('user');
@@ -130,60 +95,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Modal Content Functions
-    function showCreatePlanModal() {
-        const modalContent = `
-            <form id="createPlanForm" class="form">
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Plan Name</label>
-                    <input type="text" class="admin-form-input" name="planName" required>
-                </div>
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Assign to User</label>
-                    <select class="admin-form-select" name="userId" required>
-                        <option value="">Select User</option>
-                        <option value="1">John Doe</option>
-                        <option value="2">Jane Smith</option>
-                        <option value="3">Mike Johnson</option>
-                        <option value="4">Emily Davis</option>
-                    </select>
-                </div>
-                <div class="admin-grid admin-grid-2">
-                    <div class="admin-form-group">
-                        <label class="admin-form-label">Daily Calories</label>
-                        <input type="number" class="admin-form-input" name="calories" required>
-                    </div>
-                    <div class="admin-form-group">
-                        <label class="admin-form-label">Duration (weeks)</label>
-                        <input type="number" class="admin-form-input" name="duration" required>
-                    </div>
-                </div>
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Plan Type</label>
-                    <select class="admin-form-select" name="planType" required>
-                        <option value="">Select Type</option>
-                        <option value="weight_loss">Weight Loss</option>
-                        <option value="muscle_building">Muscle Building</option>
-                        <option value="maintenance">Maintenance</option>
-                        <option value="athletic">Athletic Performance</option>
-                    </select>
-                </div>
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Description</label>
-                    <textarea class="admin-form-textarea" name="description" rows="4"></textarea>
-                </div>
-            </form>
-        `;
-        
-        const actions = `
-            <button class="btn btn-secondary" onclick="closeModal('createPlanModal')">Cancel</button>
-            <button class="btn btn-primary" onclick="submitCreatePlan()">Create Plan</button>
-        `;
-
-        const modalHTML = createModal('createPlanModal', 'Create New Diet Plan', modalContent, actions);
-        document.getElementById('modal-container').innerHTML = modalHTML;
-        showModal('createPlanModal');
-    }
-
     function showAddSuggestionModal() {
         const modalContent = `
             <form id="addSuggestionForm" class="form">
@@ -337,179 +248,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 100);
     }
 
-    function showEditPlanModal(card) {
-        const title = card.querySelector('.diet-plan-title').textContent;
-        const description = card.querySelector('.diet-plan-description').textContent;
-        
-        const modalContent = `
-            <form id="editPlanForm" class="form">
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Plan Name</label>
-                    <input type="text" class="admin-form-input" name="planName" value="${title}" required>
-                </div>
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Description</label>
-                    <input type="text" class="admin-form-input" name="description" value="${description}" required>
-                </div>
-                <div class="admin-grid admin-grid-2">
-                    <div class="admin-form-group">
-                        <label class="admin-form-label">Daily Calories</label>
-                        <input type="number" class="admin-form-input" name="calories" value="1800" required>
-                    </div>
-                    <div class="admin-form-group">
-                        <label class="admin-form-label">Duration (weeks)</label>
-                        <input type="number" class="admin-form-input" name="duration" value="12" required>
-                    </div>
-                </div>
-                <div class="admin-form-group">
-                    <label class="admin-form-label">Plan Type</label>
-                    <select class="admin-form-select" name="planType" required>
-                        <option value="weight_loss" selected>Weight Loss</option>
-                        <option value="muscle_building">Muscle Building</option>
-                        <option value="maintenance">Maintenance</option>
-                        <option value="athletic">Athletic Performance</option>
-                    </select>
-                </div>
-            </form>
-        `;
-        
-        const actions = `
-            <button class="btn btn-secondary" onclick="closeModal('editPlanModal')">Cancel</button>
-            <button class="btn btn-primary" onclick="submitEditPlan()">Save Changes</button>
-        `;
-
-        const modalHTML = createModal('editPlanModal', 'Edit Diet Plan', modalContent, actions);
-        document.getElementById('modal-container').innerHTML = modalHTML;
-        showModal('editPlanModal');
-    }
-
-    function showViewPlanModal(card) {
-        const title = card.querySelector('.diet-plan-title').textContent;
-        const description = card.querySelector('.diet-plan-description').textContent;
-        const metaItems = card.querySelectorAll('.meta-item');
-        
-        const modalContent = `
-            <div class="diet-plan-content">
-                <div class="diet-plan-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#278b63;">
-                        <path d="M15.362 5.214A8.252 8.252 0 0 1 12 21 8.25 8.25 0 0 1 6.038 7.047 8.287 8.287 0 0 0 9 9.601a8.983 8.983 0 0 1 3.361-6.867 8.21 8.21 0 0 0 3 2.48Z"/>
-                        <path d="M12 18a3.75 3.75 0 0 0 .495-7.468 5.99 5.99 0 0 0-1.925 3.547 5.974 5.974 0 0 1-2.133-1A3.75 3.75 0 0 0 12 18Z"/>
-                    </svg>
-                </div>
-                <h3 class="diet-plan-title">${title}</h3>
-                <p class="diet-plan-description">${description}</p>
-                <div class="diet-plan-meta">
-                    ${Array.from(metaItems).map(item => `<span class="meta-item">${item.textContent}</span>`).join('')}
-                </div>
-                <div style="margin-top: 1.5rem;">
-                    <h4>Sample Meals</h4>
-                    <div class="admin-activity-list">
-                        <div class="admin-activity-item">
-                            <div class="admin-activity-info">
-                                <div class="admin-activity-dot"></div>
-                                <div>
-                                    <p class="admin-activity-title">Breakfast</p>
-                                    <p class="admin-activity-subtitle">Greek yogurt with berries and nuts</p>
-                                </div>
-                            </div>
-                            <span class="admin-activity-time">320 cal</span>
-                        </div>
-                        <div class="admin-activity-item">
-                            <div class="admin-activity-info">
-                                <div class="admin-activity-dot"></div>
-                                <div>
-                                    <p class="admin-activity-title">Lunch</p>
-                                    <p class="admin-activity-subtitle">Grilled chicken salad</p>
-                                </div>
-                            </div>
-                            <span class="admin-activity-time">450 cal</span>
-                        </div>
-                        <div class="admin-activity-item">
-                            <div class="admin-activity-info">
-                                <div class="admin-activity-dot"></div>
-                                <div>
-                                    <p class="admin-activity-title">Dinner</p>
-                                    <p class="admin-activity-subtitle">Baked salmon with vegetables</p>
-                                </div>
-                            </div>
-                            <span class="admin-activity-time">380 cal</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        const modalHTML = createModal('viewPlanModal', 'Diet Plan Details', modalContent);
-        document.getElementById('modal-container').innerHTML = modalHTML;
-        showModal('viewPlanModal');
-    }
-
     function showNotifications() {
-        const modalContent = `
-            <div class="admin-activity-list">
-                <div class="admin-activity-item">
-                    <div class="admin-activity-info">
-                        <div class="admin-activity-dot"></div>
-                        <div>
-                            <p class="admin-activity-title">New message from John Doe</p>
-                            <p class="admin-activity-subtitle">Thanks for the meal suggestions!</p>
-                        </div>
-                    </div>
-                    <span class="admin-activity-time">2 min ago</span>
-                </div>
-                <div class="admin-activity-item">
-                    <div class="admin-activity-info">
-                        <div class="admin-activity-dot"></div>
-                        <div>
-                            <p class="admin-activity-title">Sarah Wilson logged a meal</p>
-                            <p class="admin-activity-subtitle">Breakfast: Greek yogurt bowl</p>
-                        </div>
-                    </div>
-                    <span class="admin-activity-time">10 min ago</span>
-                </div>
-                <div class="admin-activity-item">
-                    <div class="admin-activity-info">
-                        <div class="admin-activity-dot"></div>
-                        <div>
-                            <p class="admin-activity-title">Mike Johnson completed workout</p>
-                            <p class="admin-activity-subtitle">30 min cardio session</p>
-                        </div>
-                    </div>
-                    <span class="admin-activity-time">1 hour ago</span>
-                </div>
-            </div>
-        `;
-
-        const modalHTML = createModal('notificationsModal', 'Notifications', modalContent);
-        document.getElementById('modal-container').innerHTML = modalHTML;
-        showModal('notificationsModal');
+        // Empty function - notifications are handled by the header dropdown
     }
-
-    // Form Submission Functions
-    window.submitCreatePlan = function() {
-        const form = document.getElementById('createPlanForm');
-        const formData = new FormData(form);
-        formData.append('action', 'create_diet_plan');
-        
-        submitForm(formData, 'Diet plan created successfully!');
-    };
-
-    window.submitAddSuggestion = function() {
-        const form = document.getElementById('addSuggestionForm');
-        const formData = new FormData(form);
-        formData.append('action', 'add_suggestion');
-        
-        submitForm(formData, 'Meal suggestion added successfully!');
-    };
-
-    window.submitEditPlan = function() {
-        const form = document.getElementById('editPlanForm');
-        const formData = new FormData(form);
-        formData.append('action', 'edit_diet_plan');
-        formData.append('planId', Math.floor(Math.random() * 100) + 1);
-        
-        submitForm(formData, 'Diet plan updated successfully!');
-    };
 
     // Generic form submission function
     function submitForm(formData, successMessage) {

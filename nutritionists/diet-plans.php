@@ -34,7 +34,7 @@ include 'header.php';
 </svg> Create New Plan</button>
     </div>
 
-    <div id="dietPlansContainer" class="grid sm:grid-cols-2 lg:grid-cols-2 gap-6">
+    <div id="dietPlansContainer" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <?php if (empty($dietPlans)): ?>
         <div class="col-span-2 text-center py-12">
             <p class="text-muted-foreground">No diet plans yet. Click "Create New Plan" to get started.</p>
@@ -68,9 +68,6 @@ include 'header.php';
                     <button class="btn btn-primary btn-sm" onclick="editPlan(<?= $plan['id'] ?>, '<?= htmlspecialchars(addslashes($plan['name'])) ?>', <?= $plan['daily_calories'] ?>, <?= $plan['duration_weeks'] ?>, '<?= htmlspecialchars(addslashes($plan['description'] ?? '')) ?>', '<?= $plan['status'] ?>')">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M7 7h-1a2 2 0 0 0 -2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2 -2v-1" /><path d="M20.385 6.585a2.1 2.1 0 0 0 -2.97 -2.97l-8.415 8.385v3h3l8.385 -8.415z" /><path d="M16 5l3 3" /></svg> Edit
                     </button>
-                    <button class="btn btn-outline btn-sm" onclick="viewPlan(<?= $plan['id'] ?>, '<?= htmlspecialchars(addslashes($plan['name'])) ?>', '<?= htmlspecialchars(addslashes($plan['user_name'])) ?>', <?= $plan['daily_calories'] ?>, <?= $plan['duration_weeks'] ?>, '<?= htmlspecialchars(addslashes($plan['description'] ?? '')) ?>')">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" /><path d="M21 12c-2.4 3.6 -6 6 -9 6c-3 0 -6.6 -2.4 -9 -6c2.4 -3.6 6 -6 9 -6c3 0 6.6 2.4 9 6" /></svg> View
-                    </button>
                     <button class="btn btn-danger btn-sm" onclick="deletePlan(<?= $plan['id'] ?>, '<?= htmlspecialchars(addslashes($plan['name'])) ?>')">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M4 7l16 0" /><path d="M10 11l0 6" /><path d="M14 11l0 6" /><path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" /><path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" /></svg> Delete
                     </button>
@@ -86,14 +83,48 @@ include 'header.php';
 // Assigned users data for the create modal dropdown
 const assignedUsers = <?= json_encode($assignedUsers) ?>;
 
+class DietPlanModal {
+    constructor() {
+        this.modal = null;
+    }
+
+    create() {
+        this.close(); // Close any existing modal
+        
+        this.modal = document.createElement('div');
+        this.modal.className = 'diet-modal';
+        this.modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+        
+        document.body.style.overflow = 'hidden';
+        
+        // Close on backdrop click
+        this.modal.addEventListener('click', (e) => {
+            if (e.target === this.modal) this.close();
+        });
+        
+        return this.modal;
+    }
+
+    close() {
+        if (this.modal) {
+            this.modal.remove();
+            this.modal = null;
+            document.body.style.overflow = 'auto';
+        }
+    }
+
+    addCloseListeners(selectors) {
+        selectors.forEach(selector => {
+            const btn = this.modal.querySelector(selector);
+            if (btn) btn.addEventListener('click', () => this.close());
+        });
+    }
+}
+
+const modalManager = new DietPlanModal();
+
 function showCreatePlanModal() {
-    const modal = document.createElement('div');
-    modal.className = 'admin-modal';
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
-    
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) closeModal();
-    });
+    const modal = modalManager.create();
     
     let userOptions = '<option value="">Select User</option>';
     assignedUsers.forEach(user => {
@@ -101,12 +132,12 @@ function showCreatePlanModal() {
     });
     
     modal.innerHTML = `
-        <div class="admin-modal-content" style="background: white; padding: 2rem; border-radius: 0.5rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-            <div class="admin-modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div class="modal-content" style="background: white; padding: 2rem; border-radius: 0.5rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Create New Diet Plan</h3>
-                <button onclick="closeModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 0; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">×</button>
+                <button class="close-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">×</button>
             </div>
-            <form id="createPlanForm">
+            <form class="plan-form">
                 <div style="margin-bottom: 1rem;">
                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Plan Name *</label>
                     <input type="text" name="planName" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; box-sizing: border-box;">
@@ -132,7 +163,7 @@ function showCreatePlanModal() {
                     <textarea name="description" rows="3" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; box-sizing: border-box; resize: vertical;"></textarea>
                 </div>
                 <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
-                    <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                    <button type="button" class="cancel-btn btn btn-outline">Cancel</button>
                     <button type="submit" class="btn btn-primary">Create Plan</button>
                 </div>
             </form>
@@ -141,7 +172,9 @@ function showCreatePlanModal() {
     
     document.body.appendChild(modal);
     
-    document.getElementById('createPlanForm').addEventListener('submit', async function(e) {
+    modalManager.addCloseListeners(['.close-btn', '.cancel-btn']);
+    
+    modal.querySelector('.plan-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = new FormData(this);
         formData.append('action', 'create_diet_plan');
@@ -155,7 +188,7 @@ function showCreatePlanModal() {
             
             if (data.success) {
                 showNotification(data.message, 'success');
-                closeModal();
+                modalManager.close();
                 setTimeout(() => location.reload(), 1000);
             } else {
                 showNotification(data.message, 'error');
@@ -167,25 +200,50 @@ function showCreatePlanModal() {
 }
 
 function editPlan(planId, planName, calories, duration, description, status) {
-    const modal = document.createElement('div');
-    modal.className = 'admin-modal';
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+    const modal = modalManager.create();
     
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) closeModal();
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+    
+    let mealPlanHTML = '';
+    days.forEach(day => {
+        mealPlanHTML += `
+            <div class="day-section" style="margin-bottom: 1.5rem; border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem;">
+                <h4 style="margin: 0 0 1rem 0; text-transform: capitalize; color: #278b63;">${day}</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.75rem;">`;
+        
+        mealTypes.forEach(meal => {
+            mealPlanHTML += `
+                <div>
+                    <label style="display: block; margin-bottom: 0.25rem; font-size: 0.875rem; font-weight: 500; text-transform: capitalize;">${meal}</label>
+                    <textarea name="meal_${day}_${meal}" placeholder="e.g., Oatmeal with berries" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; box-sizing: border-box; resize: vertical; min-height: 60px; font-size: 0.875rem;"></textarea>
+                </div>`;
+        });
+        
+        mealPlanHTML += `</div></div>`;
     });
     
     modal.innerHTML = `
-        <div class="admin-modal-content" style="background: white; padding: 2rem; border-radius: 0.5rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-            <div class="admin-modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div class="modal-content" style="background: white; padding: 2rem; border-radius: 0.5rem; max-width: 900px; width: 95%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Edit Diet Plan</h3>
-                <button onclick="closeModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">×</button>
+                <button class="close-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">×</button>
             </div>
-            <form id="editPlanForm">
+            <form class="plan-form">
                 <input type="hidden" name="planId" value="${planId}">
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Plan Name *</label>
-                    <input type="text" name="planName" value="${planName}" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; box-sizing: border-box;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Plan Name *</label>
+                        <input type="text" name="planName" value="${planName}" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; box-sizing: border-box;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Status</label>
+                        <select name="status" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; box-sizing: border-box;">
+                            <option value="active" ${status === 'active' ? 'selected' : ''}>Active</option>
+                            <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
+                            <option value="cancelled" ${status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
+                        </select>
+                    </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
                     <div>
@@ -197,20 +255,18 @@ function editPlan(planId, planName, calories, duration, description, status) {
                         <input type="number" name="duration" value="${duration}" required min="1" max="52" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; box-sizing: border-box;">
                     </div>
                 </div>
-                <div style="margin-bottom: 1rem;">
-                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Status</label>
-                    <select name="status" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; box-sizing: border-box;">
-                        <option value="active" ${status === 'active' ? 'selected' : ''}>Active</option>
-                        <option value="completed" ${status === 'completed' ? 'selected' : ''}>Completed</option>
-                        <option value="cancelled" ${status === 'cancelled' ? 'selected' : ''}>Cancelled</option>
-                    </select>
-                </div>
-                <div style="margin-bottom: 1rem;">
+                <div style="margin-bottom: 1.5rem;">
                     <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Description</label>
-                    <textarea name="description" rows="3" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; box-sizing: border-box; resize: vertical;">${description}</textarea>
+                    <textarea name="description" rows="2" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; box-sizing: border-box; resize: vertical;">${description}</textarea>
                 </div>
+                
+                <div style="margin-bottom: 1.5rem;">
+                    <h4 style="margin: 0 0 1rem 0; color: #111827; border-bottom: 2px solid #278b63; padding-bottom: 0.5rem;">Weekly Meal Plan</h4>
+                    ${mealPlanHTML}
+                </div>
+                
                 <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
-                    <button type="button" onclick="closeModal()" class="btn btn-outline">Cancel</button>
+                    <button type="button" class="cancel-btn btn btn-outline">Cancel</button>
                     <button type="submit" class="btn btn-primary">Update Plan</button>
                 </div>
             </form>
@@ -219,7 +275,12 @@ function editPlan(planId, planName, calories, duration, description, status) {
     
     document.body.appendChild(modal);
     
-    document.getElementById('editPlanForm').addEventListener('submit', async function(e) {
+    modalManager.addCloseListeners(['.close-btn', '.cancel-btn']);
+    
+    // Load existing meal data
+    loadMealData(planId);
+    
+    modal.querySelector('.plan-form').addEventListener('submit', async function(e) {
         e.preventDefault();
         const formData = new FormData(this);
         formData.append('action', 'edit_diet_plan');
@@ -233,7 +294,7 @@ function editPlan(planId, planName, calories, duration, description, status) {
             
             if (data.success) {
                 showNotification(data.message, 'success');
-                closeModal();
+                modalManager.close();
                 setTimeout(() => location.reload(), 1000);
             } else {
                 showNotification(data.message, 'error');
@@ -244,34 +305,22 @@ function editPlan(planId, planName, calories, duration, description, status) {
     });
 }
 
-function viewPlan(planId, planName, userName, calories, duration, description) {
-    const modal = document.createElement('div');
-    modal.className = 'admin-modal';
-    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
-    
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) closeModal();
-    });
-    
-    modal.innerHTML = `
-        <div class="admin-modal-content" style="background: white; padding: 2rem; border-radius: 0.5rem; max-width: 500px; width: 90%; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
-            <div class="admin-modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">${planName}</h3>
-                <button onclick="closeModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">×</button>
-            </div>
-            <div style="space-y: 1rem;">
-                <p><strong>Assigned to:</strong> ${userName}</p>
-                <p><strong>Daily Calories:</strong> ${calories.toLocaleString()} kcal</p>
-                <p><strong>Duration:</strong> ${duration} weeks</p>
-                <p><strong>Description:</strong> ${description || 'No description provided'}</p>
-            </div>
-            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
-                <button onclick="closeModal()" class="btn btn-primary">Close</button>
-            </div>
-        </div>
-    `;
-    
-    document.body.appendChild(modal);
+async function loadMealData(planId) {
+    try {
+        const response = await fetch(`nutritionist_handler.php?action=get_meal_plan&planId=${planId}`);
+        const data = await response.json();
+        
+        if (data.success && data.data && data.data.meals) {
+            data.data.meals.forEach(meal => {
+                const textarea = document.querySelector(`textarea[name="meal_${meal.day_of_week}_${meal.meal_type}"]`);
+                if (textarea) {
+                    textarea.value = meal.meal_items || '';
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error loading meal data:', error);
+    }
 }
 
 function deletePlan(planId, planName) {
@@ -309,8 +358,7 @@ function deletePlan(planId, planName) {
 }
 
 function closeModal() {
-    const modal = document.querySelector('.admin-modal');
-    if (modal) modal.remove();
+    modalManager.close();
 }
 
 function showNotification(message, type = 'info') {

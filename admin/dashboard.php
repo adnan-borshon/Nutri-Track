@@ -86,14 +86,16 @@ foreach ($goalCounts as $type => $count) {
     $goalPercentages[$type] = round(($count / $totalGoals) * 100);
 }
 
-// Helper function for time ago
+// Helper function for time ago with proper calculations
 function timeAgoAdmin($datetime) {
     $time = strtotime($datetime);
     $diff = time() - $time;
     if ($diff < 60) return 'Just now';
     if ($diff < 3600) return floor($diff / 60) . ' min ago';
     if ($diff < 86400) return floor($diff / 3600) . ' hours ago';
-    return floor($diff / 86400) . ' days ago';
+    if ($diff < 2592000) return floor($diff / 86400) . ' days ago';
+    if ($diff < 31536000) return floor($diff / 2592000) . ' months ago';
+    return floor($diff / 31536000) . ' years ago';
 }
 
 include 'header.php';
@@ -231,10 +233,13 @@ include 'header.php';
                 <h3 class="card-title">Recent Activity</h3>
             </div>
             <div class="card-content">
+                <?php if (empty($recentActivity)): ?>
+                <div style="text-align: center; color: #6b7280; padding: 2rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" style="margin: 0 auto 1rem; opacity: 0.5;"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    <p>No recent activity to display</p>
+                </div>
+                <?php else: ?>
                 <div class="space-y-4">
-                    <?php if (empty($recentActivity)): ?>
-                    <p style="text-align: center; color: #6b7280;">No recent activity</p>
-                    <?php else: ?>
                     <?php foreach ($recentActivity as $activity): ?>
                     <div class="activity-item">
                         <div class="activity-info">
@@ -250,8 +255,8 @@ include 'header.php';
                         </div>
                     </div>
                     <?php endforeach; ?>
-                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
             </div>
         </div>
     

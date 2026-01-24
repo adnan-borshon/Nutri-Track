@@ -4,6 +4,7 @@
  * Handles all user-related CRUD operations
  */
 require_once '../includes/session.php';
+require_once '../includes/notifications.php';
 
 header('Content-Type: application/json');
 
@@ -783,7 +784,6 @@ function handleBookAppointment($userId) {
         $stmt->execute([$userId, $nutritionistId, $date, $time, $reason]);
         
         // Create notification for nutritionist
-        require_once '../includes/notifications.php';
         createNotification($nutritionistId, 'appointment_request', 'New Appointment Request', 
             "New appointment request from user for {$date} at {$time}");
         

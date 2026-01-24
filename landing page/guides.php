@@ -1,20 +1,17 @@
 <?php
 $page_title = "Guides";
 include '../includes/header.php';
+require_once '../config/db.php';
 
-$featuredGuides = [
-    ['title' => 'Complete Guide to Macronutrients', 'description' => 'Learn about proteins, carbohydrates, and fats - how much you need and the best sources for each.', 'author' => 'Dr. Sarah Mitchell', 'category' => 'Nutrition Basics', 'readTime' => 12],
-    ['title' => 'Meal Prep 101: Save Time & Eat Healthy', 'description' => 'Master the art of meal preparation with tips, techniques, and storage guidelines.', 'author' => 'Chef Emma Wilson', 'category' => 'Meal Planning', 'readTime' => 8],
-    ['title' => 'Mindful Eating Practices', 'description' => 'Develop a healthier relationship with food through mindfulness techniques.', 'author' => 'Dr. Lisa Thompson', 'category' => 'Wellness', 'readTime' => 10]
-];
+$db = getDB();
 
-$otherGuides = [
-    ['title' => 'Understanding Food Labels', 'description' => 'Decode nutrition labels to make informed choices at the grocery store.', 'author' => 'Dr. Emily Rodriguez', 'category' => 'Nutrition Basics', 'readTime' => 6],
-    ['title' => 'Hydration: More Than Just Water', 'description' => 'Explore the science of hydration and learn optimal fluid intake strategies.', 'author' => 'Dr. Michael Chen', 'category' => 'Wellness', 'readTime' => 7],
-    ['title' => 'Sports Nutrition Fundamentals', 'description' => 'Fuel your workouts and optimize recovery with proper nutrition strategies.', 'author' => 'Coach James Martinez', 'category' => 'Fitness', 'readTime' => 15],
-    ['title' => 'Plant-Based Eating Guide', 'description' => 'Everything you need to know about transitioning to a plant-based diet.', 'author' => 'Dr. Sarah Mitchell', 'category' => 'Diets', 'readTime' => 11],
-    ['title' => 'Sleep and Nutrition Connection', 'description' => 'Discover how what you eat affects your sleep quality and vice versa.', 'author' => 'Dr. Emily Rodriguez', 'category' => 'Wellness', 'readTime' => 9]
-];
+// Get featured guides (first 3)
+$stmt = $db->query("SELECT * FROM nutrition_guides ORDER BY created_at DESC LIMIT 3");
+$featuredGuides = $stmt->fetchAll();
+
+// Get all other guides
+$stmt = $db->query("SELECT * FROM nutrition_guides ORDER BY created_at DESC LIMIT 8 OFFSET 3");
+$otherGuides = $stmt->fetchAll();
 
 function getInitials($name) {
     $parts = explode(' ', $name);
@@ -31,6 +28,7 @@ function getInitials($name) {
             </p>
         </div>
 
+        <?php if (!empty($featuredGuides)): ?>
         <div style="margin-bottom: 4rem;">
             <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem;">Featured Guides</h2>
             <div class="grid grid-3">
@@ -38,17 +36,17 @@ function getInitials($name) {
                     <div class="guide-card">
                         <div class="guide-image">📖</div>
                         <div class="guide-content">
-                            <span class="guide-category"><?php echo $guide['category']; ?></span>
-                            <h3 class="guide-title"><?php echo $guide['title']; ?></h3>
-                            <p class="guide-description"><?php echo $guide['description']; ?></p>
+                            <span class="guide-category">Nutrition</span>
+                            <h3 class="guide-title"><?php echo htmlspecialchars($guide['title']); ?></h3>
+                            <p class="guide-description"><?php echo htmlspecialchars(substr($guide['content'], 0, 120)) . '...'; ?></p>
                             <div class="guide-meta">
                                 <div class="guide-author">
-                                    <div class="guide-avatar"><?php echo getInitials($guide['author']); ?></div>
-                                    <span class="guide-author-name"><?php echo $guide['author']; ?></span>
+                                    <div class="guide-avatar">NT</div>
+                                    <span class="guide-author-name">NutriTrack Team</span>
                                 </div>
                                 <div class="guide-time">
                                     <span>🕒</span>
-                                    <span><?php echo $guide['readTime']; ?> min</span>
+                                    <span>5 min</span>
                                 </div>
                             </div>
                         </div>
@@ -56,21 +54,23 @@ function getInitials($name) {
                 <?php endforeach; ?>
             </div>
         </div>
+        <?php endif; ?>
 
+        <?php if (!empty($otherGuides)): ?>
         <div style="margin-bottom: 4rem;">
             <h2 style="font-size: 1.5rem; font-weight: bold; margin-bottom: 1.5rem;">All Guides</h2>
             <div class="grid grid-4">
                 <?php foreach ($otherGuides as $guide): ?>
                     <div class="card">
                         <div class="card-content">
-                            <span style="display: inline-block; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; margin-bottom: 0.75rem;"><?php echo $guide['category']; ?></span>
-                            <h3 style="font-weight: 600; margin-bottom: 0.5rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"><?php echo $guide['title']; ?></h3>
-                            <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"><?php echo $guide['description']; ?></p>
+                            <span style="display: inline-block; padding: 0.25rem 0.5rem; border: 1px solid #d1d5db; border-radius: 0.25rem; font-size: 0.75rem; margin-bottom: 0.75rem;">Nutrition</span>
+                            <h3 style="font-weight: 600; margin-bottom: 0.5rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"><?php echo htmlspecialchars($guide['title']); ?></h3>
+                            <p style="font-size: 0.875rem; color: #6b7280; margin-bottom: 1rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;"><?php echo htmlspecialchars(substr($guide['content'], 0, 100)) . '...'; ?></p>
                             <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.875rem; color: #6b7280;">
-                                <span><?php echo $guide['author']; ?></span>
+                                <span>NutriTrack Team</span>
                                 <div style="display: flex; align-items: center; gap: 0.25rem;">
                                     <span>🕒</span>
-                                    <span><?php echo $guide['readTime']; ?>m</span>
+                                    <span>5m</span>
                                 </div>
                             </div>
                         </div>
@@ -78,6 +78,13 @@ function getInitials($name) {
                 <?php endforeach; ?>
             </div>
         </div>
+        <?php endif; ?>
+
+        <?php if (empty($featuredGuides) && empty($otherGuides)): ?>
+        <div style="text-align: center; padding: 3rem; color: #6b7280;">
+            <p>No guides available at the moment. Check back soon!</p>
+        </div>
+        <?php endif; ?>
 
         <div class="cta">
             <h2 class="cta-title">Access Premium Content</h2>

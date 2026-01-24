@@ -6,6 +6,9 @@ $user = getCurrentUser();
 
 $db = getDB();
 
+// Get current day of week for meal schedule
+$currentDay = strtolower(date('l')); // e.g., 'sunday', 'monday', etc.
+
 // Get active diet plan from database
 $stmt = $db->prepare("SELECT dp.*, u.name as nutritionist_name 
                       FROM diet_plans dp 
@@ -16,6 +19,21 @@ $stmt->execute([$user['id']]);
 $plan = $stmt->fetch();
 
 $hasPlan = !empty($plan);
+
+// Get today's meals for the meal schedule section
+$todayMeals = [];
+if ($hasPlan) {
+    $stmt = $db->prepare("SELECT meal_type, meal_items 
+                          FROM diet_plan_meals 
+                          WHERE diet_plan_id = ? AND day_of_week = ?
+                          ORDER BY FIELD(meal_type, 'breakfast', 'lunch', 'dinner', 'snack')");
+    $stmt->execute([$plan['id'], $currentDay]);
+    $meals = $stmt->fetchAll();
+    
+    foreach ($meals as $meal) {
+        $todayMeals[$meal['meal_type']] = $meal['meal_items'];
+    }
+}
 
 if ($hasPlan) {
     // Get meal suggestions for this plan - check if table exists first
@@ -119,20 +137,28 @@ include 'header.php';
 
     <!-- Daily Meal Schedule -->
     <div style="margin-bottom: 2rem;">
-        <h3 style="font-weight: 600; margin-bottom: 1rem; color: #374151;">Today's Meal Schedule</h3>
-        <div class="meal-schedule">
-            <?php foreach ($dietPlan['meals'] as $meal): ?>
-                <div class="meal-time-card">
-                    <div class="meal-time-header">
-                        <div class="meal-time-icon"><?php echo $meal['icon']; ?></div>
-                        <div class="meal-time-title"><?php echo $meal['time']; ?></div>
+        <h3 style="font-weight: 600; margin-bottom: 1rem; color: #374151;">Today's Meal Schedule - <?= ucfirst($currentDay) ?></h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem;">
+            <?php 
+            $mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
+            $mealIcons = [
+                'breakfast' => '🌅',
+                'lunch' => '☀️', 
+                'dinner' => '🌙',
+                'snack' => '🍎'
+            ];
+            foreach ($mealTypes as $mealType): ?>
+            <div style="background: #f9fafb; padding: 1.5rem; border-radius: 0.75rem; border: 1px solid #e5e7eb;">
+                <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                    <div style="width: 3rem; height: 3rem; background: #278b63; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 1rem; font-size: 1.25rem;">
+                        <?= $mealIcons[$mealType] ?>
                     </div>
-                    <div class="meal-items">
-                        <?php foreach ($meal['items'] as $item): ?>
-                            <div class="meal-item"><?php echo $item; ?></div>
-                        <?php endforeach; ?>
-                    </div>
+                    <h4 style="margin: 0; text-transform: capitalize; font-weight: 600; color: #111827; font-size: 1.125rem;"><?= $mealType ?></h4>
                 </div>
+                <p style="margin: 0; color: #6b7280; font-size: 0.875rem; line-height: 1.6;">
+                    <?= isset($todayMeals[$mealType]) && !empty($todayMeals[$mealType]) ? htmlspecialchars($todayMeals[$mealType]) : 'No meal planned for today' ?>
+                </p>
+            </div>
             <?php endforeach; ?>
         </div>
     </div>

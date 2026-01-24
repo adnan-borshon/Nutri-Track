@@ -157,9 +157,9 @@ include '../includes/header.php';
 <section class="section section-gray">
     <div class="container">
         <div class="section-header">
-            <h2 class="section-title">Loved by Health Enthusiasts</h2>
+            <h2 class="section-title">Trusted by Health Enthusiasts</h2>
             <p class="section-description">
-                See what our users are saying about their transformation journey
+                Join thousands of users who are transforming their health with NutriTrack
             </p>
         </div>
         <div class="grid grid-3">
@@ -181,10 +181,10 @@ include '../includes/header.php';
   <svg width="24" height="24"><use href="#star-icon"></use></svg>
 </div>
                     </div>
-                    <p class="card-description" style="margin-bottom: 1rem;">"NutriTrack completely changed my relationship with food. The personalized meal plans and nutritionist support made all the difference."</p>
+                    <p class="card-description" style="margin-bottom: 1rem;">"The meal tracking feature helps me stay on top of my nutrition goals. The interface is clean and easy to use."</p>
                     <div>
-                        <p style="font-weight: 700;">Sarah Johnson</p>
-                        <p style="font-size: 0.875rem; color: #090a0b;">Lost 30 lbs</p>
+                        <p style="font-weight: 700;">Health Enthusiast</p>
+                        <p style="font-size: 0.875rem; color: #090a0b;">Verified User</p>
                     </div>
                 </div>
             </div>
@@ -200,10 +200,10 @@ include '../includes/header.php';
 </div>
 
                     </div>
-                    <p class="card-description" style="margin-bottom: 1rem;">"The detailed nutrition tracking helps me optimize my diet for muscle building. The app is intuitive and the data insights are invaluable."</p>
+                    <p class="card-description" style="margin-bottom: 1rem;">"Having access to nutritionist guidance through the platform makes a real difference in achieving my fitness goals."</p>
                     <div>
-                        <p style="font-weight: 700;">Michael Chen</p>
-                        <p style="font-size: 0.875rem; color: #000000;">Fitness Enthusiast</p>
+                        <p style="font-weight: 700;">Fitness Enthusiast</p>
+                        <p style="font-size: 0.875rem; color: #000000;">Active User</p>
                     </div>
                 </div>
             </div>
@@ -218,10 +218,10 @@ include '../includes/header.php';
   <svg width="24" height="24"><use href="#star-icon"></use></svg>
 </div>
                     </div>
-                    <p class="card-description" style="margin-bottom: 1rem;">"As someone with a hectic schedule, the meal planning feature saves me hours every week. Highly recommend!"</p>
+                    <p class="card-description" style="margin-bottom: 1rem;">"The comprehensive tracking features help me maintain a balanced approach to nutrition and wellness."</p>
                     <div>
-                        <p style="font-weight: 700;">Emily Davis</p>
-                        <p style="font-size: 0.875rem; color: #000000;">Busy Professional</p>
+                        <p style="font-weight: 700;">Wellness Advocate</p>
+                        <p style="font-size: 0.875rem; color: #000000;">Platform User</p>
                     </div>
                 </div>
             </div>
