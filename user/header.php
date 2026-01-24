@@ -2,6 +2,40 @@
 require_once '../includes/session.php';
 checkAuth('user');
 $user = getCurrentUser();
+
+// Get notifications from database
+$db = getDB();
+$notifications = [];
+
+// Get unread messages
+$stmt = $db->prepare("SELECT m.*, u.name as sender_name FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.receiver_id = ? AND m.is_read = 0 ORDER BY m.created_at DESC LIMIT 5");
+$stmt->execute([$user['id']]);
+$unreadMessages = $stmt->fetchAll();
+foreach ($unreadMessages as $msg) {
+    $notifications[] = [
+        'type' => 'message',
+        'title' => 'New message from ' . $msg['sender_name'],
+        'message' => substr($msg['message'], 0, 50) . '...',
+        'time' => $msg['created_at'],
+        'link' => 'chat.php'
+    ];
+}
+
+// Get upcoming appointments
+$stmt = $db->prepare("SELECT a.*, u.name as nutritionist_name FROM appointments a JOIN users u ON a.nutritionist_id = u.id WHERE a.user_id = ? AND a.status = 'scheduled' AND a.appointment_date >= CURDATE() ORDER BY a.appointment_date ASC LIMIT 3");
+$stmt->execute([$user['id']]);
+$upcomingAppts = $stmt->fetchAll();
+foreach ($upcomingAppts as $appt) {
+    $notifications[] = [
+        'type' => 'appointment',
+        'title' => 'Upcoming appointment',
+        'message' => 'With ' . $appt['nutritionist_name'] . ' on ' . date('M j', strtotime($appt['appointment_date'])),
+        'time' => $appt['created_at'],
+        'link' => 'appointments.php'
+    ];
+}
+
+$notificationCount = count($notifications);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -97,13 +131,45 @@ $user = getCurrentUser();
             <header class="top-bar">
                 <div></div>
                 <div class="header-actions">
-                    <div class="user-info">
-                        <button class="btn btn-outline">
+                    <div class="user-info" style="position: relative;">
+                        <button class="btn btn-outline" onclick="toggleNotifications()" id="notificationBtn">
 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;stroke-width:1.5;color:#278b63;">
   <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
 </svg>
                         </button>
-                        <div class="notification-dot"></div>
+                        <?php if ($notificationCount > 0): ?>
+                        <div class="notification-dot" style="position: absolute; top: 0; right: 0; width: 8px; height: 8px; background: #dc2626; border-radius: 50%;"></div>
+                        <?php endif; ?>
+                        <div id="notificationDropdown" style="display: none; position: absolute; top: 100%; right: 0; width: 320px; background: white; border-radius: 0.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1000; margin-top: 0.5rem;">
+                            <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb;">
+                                <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600;">Notifications</h4>
+                            </div>
+                            <div style="max-height: 300px; overflow-y: auto;">
+                                <?php if (empty($notifications)): ?>
+                                <div style="padding: 2rem; text-align: center; color: #6b7280;">
+                                    <p style="margin: 0;">No new notifications</p>
+                                </div>
+                                <?php else: ?>
+                                <?php foreach ($notifications as $notif): ?>
+                                <a href="<?php echo $notif['link']; ?>" style="display: block; padding: 0.75rem 1rem; border-bottom: 1px solid #f3f4f6; text-decoration: none; color: inherit;">
+                                    <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                                        <div style="width: 2rem; height: 2rem; background: <?php echo $notif['type'] === 'message' ? '#dbeafe' : '#dcfce7'; ?>; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <?php if ($notif['type'] === 'message'): ?>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                                            <?php else: ?>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#278b63" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                            <?php endif; ?>
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <p style="margin: 0; font-size: 0.813rem; font-weight: 500; color: #111827;"><?php echo htmlspecialchars($notif['title']); ?></p>
+                                            <p style="margin: 0.25rem 0 0; font-size: 0.75rem; color: #6b7280;"><?php echo htmlspecialchars($notif['message']); ?></p>
+                                        </div>
+                                    </div>
+                                </a>
+                                <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </div>
                     <div class="user-info" onclick="showProfilePopup()" style="cursor: pointer;">
                         <div class="user-avatar"><?php echo getUserInitials($user['name']); ?></div>

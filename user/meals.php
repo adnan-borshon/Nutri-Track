@@ -112,31 +112,27 @@ include 'header.php';
         <?php endforeach; ?>
     </div>
 
-    <div class="card">
-        <div class="card-header">
-            <h3 class="card-title">Add Food</h3>
-            <select id="mealTypeSelect" style="padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
-                <option value="breakfast">Breakfast</option>
-                <option value="lunch">Lunch</option>
-                <option value="dinner">Dinner</option>
-                <option value="snack">Snack</option>
-            </select>
+</div>
+
+<!-- Food Selection Modal -->
+<div id="foodModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; border-radius: 0.75rem; max-width: 600px; width: 90%; max-height: 80vh; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e5e7eb;">
+            <h3 style="font-size: 1.125rem; font-weight: 600; margin: 0;">Add Food to <span id="modalMealType" style="color: #278b63; text-transform: capitalize;"></span></h3>
+            <button onclick="closeFoodModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280; padding: 0.25rem;">&times;</button>
         </div>
-        <div class="card-content">
-            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div style="padding: 1rem 1.5rem; max-height: 60vh; overflow-y: auto;">
+            <input type="text" id="foodSearch" placeholder="Search foods..." oninput="filterFoods()" style="width: 100%; padding: 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; margin-bottom: 1rem; font-size: 0.875rem;">
+            <div id="foodList" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem;">
                 <?php if (empty($foods)): ?>
-                <p style="grid-column: span 4; text-align: center; color: #6b7280;">No foods in database. Import the schema first.</p>
+                <p style="grid-column: span 2; text-align: center; color: #6b7280; padding: 2rem;">No foods in database.</p>
                 <?php else: ?>
-                <?php foreach (array_slice($foods, 0, 8) as $food): ?>
-                    <button class="food-item-btn" onclick="addMeal(<?php echo $food['id']; ?>, '<?php echo htmlspecialchars($food['name'], ENT_QUOTES); ?>', <?php echo $food['calories']; ?>)">
-                        <div class="food-item-header">
-                            <span class="food-name"><?php echo htmlspecialchars($food['name']); ?></span>
-                            <span class="food-calories"><?php echo $food['calories']; ?> cal</span>
-                        </div>
-                        <p class="food-macros">
-                            P: <?php echo $food['protein']; ?>g • C: <?php echo $food['carbs']; ?>g • F: <?php echo $food['fat']; ?>g
-                        </p>
-                    </button>
+                <?php foreach ($foods as $food): ?>
+                <button class="food-option" data-name="<?php echo htmlspecialchars(strtolower($food['name'])); ?>" onclick="addMeal(<?php echo $food['id']; ?>, '<?php echo htmlspecialchars($food['name'], ENT_QUOTES); ?>', <?php echo $food['calories']; ?>)" style="display: flex; flex-direction: column; align-items: flex-start; padding: 0.75rem; background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 0.5rem; cursor: pointer; transition: all 0.2s; text-align: left;">
+                    <span style="font-weight: 500; color: #111827; font-size: 0.875rem;"><?php echo htmlspecialchars($food['name']); ?></span>
+                    <span style="font-size: 0.75rem; color: #278b63; font-weight: 500;"><?php echo $food['calories']; ?> cal</span>
+                    <span style="font-size: 0.625rem; color: #6b7280; margin-top: 0.25rem;">P: <?php echo $food['protein']; ?>g • C: <?php echo $food['carbs']; ?>g • F: <?php echo $food['fat']; ?>g</span>
+                </button>
                 <?php endforeach; ?>
                 <?php endif; ?>
             </div>
@@ -147,14 +143,43 @@ include 'header.php';
 <script>
 const calorieGoal = <?php echo $calorieGoal; ?>;
 let totalCalories = <?php echo $totalCalories; ?>;
+let currentMealType = 'breakfast';
 
 function quickAddMeal(mealType) {
-    document.getElementById('mealTypeSelect').value = mealType;
-    document.querySelector('.card:has(#mealTypeSelect)').scrollIntoView({ behavior: 'smooth' });
+    currentMealType = mealType;
+    document.getElementById('modalMealType').textContent = mealType;
+    document.getElementById('foodModal').style.display = 'flex';
+    document.getElementById('foodSearch').value = '';
+    filterFoods();
+    document.body.style.overflow = 'hidden';
 }
 
+function closeFoodModal() {
+    document.getElementById('foodModal').style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function filterFoods() {
+    const search = document.getElementById('foodSearch').value.toLowerCase();
+    document.querySelectorAll('.food-option').forEach(btn => {
+        const name = btn.dataset.name;
+        btn.style.display = name.includes(search) ? 'flex' : 'none';
+    });
+}
+
+// Close modal on outside click
+document.getElementById('foodModal').addEventListener('click', function(e) {
+    if (e.target === this) closeFoodModal();
+});
+
+// Close modal on Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeFoodModal();
+});
+
 async function addMeal(foodId, foodName, calories) {
-    const mealType = document.getElementById('mealTypeSelect').value;
+    const mealType = currentMealType;
+    closeFoodModal();
     
     try {
         const formData = new FormData();

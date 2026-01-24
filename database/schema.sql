@@ -194,6 +194,40 @@ CREATE TABLE IF NOT EXISTS appointments (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- =============================================
+-- MEAL SUGGESTIONS TABLE (Recipes)
+-- =============================================
+CREATE TABLE IF NOT EXISTS meal_suggestions (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nutritionist_id INT NOT NULL,
+    title VARCHAR(100) NOT NULL,
+    description TEXT DEFAULT NULL,
+    meal_type ENUM('breakfast', 'lunch', 'dinner', 'snack') NOT NULL,
+    calories INT DEFAULT 0,
+    prep_time INT DEFAULT 0,
+    ingredients TEXT DEFAULT NULL,
+    instructions TEXT DEFAULT NULL,
+    tags VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (nutritionist_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- =============================================
+-- NUTRITION GUIDES TABLE
+-- =============================================
+CREATE TABLE IF NOT EXISTS nutrition_guides (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nutritionist_id INT NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    content TEXT NOT NULL,
+    category VARCHAR(50) DEFAULT 'General',
+    difficulty ENUM('beginner', 'intermediate', 'advanced') DEFAULT 'beginner',
+    read_time INT DEFAULT 5,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (nutritionist_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- =============================================
 -- INSERT SAMPLE DATA
 -- =============================================
 

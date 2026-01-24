@@ -3,46 +3,71 @@ $page_title = "Recipes";
 require_once '../includes/session.php';
 checkAuth('user');
 $user = getCurrentUser();
-include 'header.php';
 
-$recipes = [
-    [
-        'id' => 1,
-        'title' => 'Protein Smoothie Bowl', 
-        'calories' => 320, 
-        'time' => 10, 
-        'difficulty' => 'Easy',
-        'ingredients' => ['1 banana', '1 cup berries', '1 scoop protein powder', '1/2 cup almond milk'],
-        'instructions' => ['Blend all ingredients until smooth', 'Pour into bowl', 'Top with granola and fresh fruits']
-    ],
-    [
-        'id' => 2,
-        'title' => 'Quinoa Power Salad', 
-        'calories' => 420, 
-        'time' => 15, 
-        'difficulty' => 'Easy',
-        'ingredients' => ['1 cup cooked quinoa', 'Mixed greens', 'Cherry tomatoes', 'Avocado', 'Olive oil'],
-        'instructions' => ['Cook quinoa according to package', 'Mix with vegetables', 'Drizzle with olive oil']
-    ],
-    [
-        'id' => 3,
-        'title' => 'Grilled Salmon', 
-        'calories' => 380, 
-        'time' => 25, 
-        'difficulty' => 'Medium',
-        'ingredients' => ['Salmon fillet', 'Lemon', 'Herbs', 'Olive oil'],
-        'instructions' => ['Season salmon with herbs', 'Grill for 12-15 minutes', 'Serve with lemon']
-    ],
-    [
-        'id' => 4,
-        'title' => 'Veggie Stir Fry', 
-        'calories' => 280, 
-        'time' => 20, 
-        'difficulty' => 'Easy',
-        'ingredients' => ['Mixed vegetables', 'Soy sauce', 'Garlic', 'Ginger', 'Sesame oil'],
-        'instructions' => ['Heat oil in pan', 'Add vegetables and stir fry', 'Season with soy sauce']
-    ]
-];
+$db = getDB();
+
+// Fetch meal suggestions from nutritionists (recipes shared with users)
+$recipes = [];
+
+// Get suggestions from the user's assigned nutritionist, or all nutritionists if none assigned
+if ($user['nutritionist_id']) {
+    $stmt = $db->prepare("SELECT ms.*, u.name as author_name 
+                          FROM meal_suggestions ms 
+                          JOIN users u ON ms.nutritionist_id = u.id 
+                          WHERE ms.nutritionist_id = ? 
+                          ORDER BY ms.created_at DESC");
+    $stmt->execute([$user['nutritionist_id']]);
+} else {
+    $stmt = $db->query("SELECT ms.*, u.name as author_name 
+                        FROM meal_suggestions ms 
+                        JOIN users u ON ms.nutritionist_id = u.id 
+                        ORDER BY ms.created_at DESC 
+                        LIMIT 20");
+}
+$suggestions = $stmt->fetchAll();
+
+// Convert to recipe format for display
+foreach ($suggestions as $s) {
+    $recipes[] = [
+        'id' => $s['id'],
+        'title' => $s['title'],
+        'calories' => $s['calories'],
+        'time' => $s['prep_time'],
+        'difficulty' => ucfirst($s['meal_type']),
+        'description' => $s['description'],
+        'ingredients' => $s['ingredients'] ? explode("\n", $s['ingredients']) : [],
+        'instructions' => $s['instructions'] ? explode("\n", $s['instructions']) : [],
+        'tags' => $s['tags'],
+        'author' => $s['author_name']
+    ];
+}
+
+// If no suggestions from nutritionists, show foods from database as recipe ideas
+if (empty($recipes)) {
+    $stmt = $db->query("SELECT f.*, fc.name as category_name 
+                        FROM foods f 
+                        LEFT JOIN food_categories fc ON f.category_id = fc.id 
+                        ORDER BY f.name 
+                        LIMIT 12");
+    $foods = $stmt->fetchAll();
+    
+    foreach ($foods as $f) {
+        $recipes[] = [
+            'id' => $f['id'],
+            'title' => $f['name'],
+            'calories' => $f['calories'],
+            'time' => 10,
+            'difficulty' => $f['category_name'] ?: 'General',
+            'description' => $f['description'] ?: 'A nutritious food option',
+            'ingredients' => [$f['name'] . ' - ' . ($f['serving_size'] ?? '1 serving')],
+            'instructions' => ['Prepare according to your preference'],
+            'tags' => '',
+            'author' => 'NutriTrack'
+        ];
+    }
+}
+
+include 'header.php';
 ?>
 
 <div class="page-header">
@@ -53,6 +78,14 @@ $recipes = [
 </div>
 
 <div class="grid grid-3" style="gap: 1.5rem;">
+    <?php if (empty($recipes)): ?>
+    <div style="grid-column: span 3; text-align: center; padding: 3rem; color: #6b7280;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:48px;height:48px;stroke-width:1.5;color:#278b63;margin:0 auto 1rem;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 8.25v-1.5m0 1.5c-1.355 0-2.697.056-4.024.166C6.845 8.51 6 9.473 6 10.608v2.513m6-4.871c1.355 0 2.697.056 4.024.166C17.155 8.51 18 9.473 18 10.608v2.513M15 8.25v-1.5m-6 1.5v-1.5m12 9.75-3.97-3.97a.75.75 0 0 0-1.06 0L12 16.94l-3.97-3.97a.75.75 0 0 0-1.06 0L3 16.94V21a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-4.06Z" />
+        </svg>
+        <p>No recipes available yet. Check back later for meal suggestions from your nutritionist!</p>
+    </div>
+    <?php else: ?>
     <?php foreach ($recipes as $recipe): ?>
         <div class="recipe-card" onclick="openRecipeModal(<?php echo htmlspecialchars(json_encode($recipe)); ?>)">
             <div class="recipe-image">
@@ -88,6 +121,7 @@ $recipes = [
             </div>
         </div>
     <?php endforeach; ?>
+    <?php endif; ?>
 </div>
 
 <!-- Recipe Modal -->

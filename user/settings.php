@@ -153,50 +153,53 @@ include 'header.php';
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Weight (kg)</label>
-                        <input type="number" id="weight" step="0.1" placeholder="70.5" class="form-input">
+                        <input type="number" id="weight" step="0.1" placeholder="70.5" class="form-input" value="<?php echo htmlspecialchars($user['weight'] ?? ''); ?>">
                     </div>
                     <div class="form-group">
                         <label class="form-label">Height (cm)</label>
-                        <input type="number" id="height" placeholder="175" class="form-input">
+                        <input type="number" id="height" placeholder="175" class="form-input" value="<?php echo htmlspecialchars($user['height'] ?? ''); ?>">
                     </div>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Age</label>
-                    <input type="number" id="age" min="1" max="120" placeholder="25" class="form-input">
+                    <input type="number" id="age" min="1" max="120" placeholder="25" class="form-input" value="<?php echo htmlspecialchars($user['age'] ?? ''); ?>">
                 </div>
+                <?php
+                $savedConditions = explode(',', $user['health_conditions'] ?? '');
+                ?>
                 <div class="form-group">
                     <label class="form-label">Health Conditions</label>
                     <div class="health-conditions">
                         <label class="condition-checkbox">
-                            <input type="checkbox" value="diabetes">
+                            <input type="checkbox" value="diabetes" <?php echo in_array('diabetes', $savedConditions) ? 'checked' : ''; ?>>
                             <span>Diabetes</span>
                         </label>
                         <label class="condition-checkbox">
-                            <input type="checkbox" value="hypertension">
+                            <input type="checkbox" value="hypertension" <?php echo in_array('hypertension', $savedConditions) ? 'checked' : ''; ?>>
                             <span>Hypertension</span>
                         </label>
                         <label class="condition-checkbox">
-                            <input type="checkbox" value="heart_disease">
+                            <input type="checkbox" value="heart_disease" <?php echo in_array('heart_disease', $savedConditions) ? 'checked' : ''; ?>>
                             <span>Heart Disease</span>
                         </label>
                         <label class="condition-checkbox">
-                            <input type="checkbox" value="obesity">
+                            <input type="checkbox" value="obesity" <?php echo in_array('obesity', $savedConditions) ? 'checked' : ''; ?>>
                             <span>Obesity</span>
                         </label>
                         <label class="condition-checkbox">
-                            <input type="checkbox" value="thyroid">
+                            <input type="checkbox" value="thyroid" <?php echo in_array('thyroid', $savedConditions) ? 'checked' : ''; ?>>
                             <span>Thyroid Issues</span>
                         </label>
                         <label class="condition-checkbox">
-                            <input type="checkbox" value="allergies">
+                            <input type="checkbox" value="allergies" <?php echo in_array('allergies', $savedConditions) ? 'checked' : ''; ?>>
                             <span>Food Allergies</span>
                         </label>
                         <label class="condition-checkbox">
-                            <input type="checkbox" value="digestive">
+                            <input type="checkbox" value="digestive" <?php echo in_array('digestive', $savedConditions) ? 'checked' : ''; ?>>
                             <span>Digestive Issues</span>
                         </label>
                         <label class="condition-checkbox">
-                            <input type="checkbox" value="kidney">
+                            <input type="checkbox" value="kidney" <?php echo in_array('kidney', $savedConditions) ? 'checked' : ''; ?>>
                             <span>Kidney Disease</span>
                         </label>
                     </div>
@@ -213,7 +216,16 @@ include 'header.php';
 </div>
 
 <script>
+// Initialize selected conditions from saved data
 let selectedConditions = [];
+<?php if (!empty($user['health_conditions'])): ?>
+<?php foreach ($savedConditions as $cond): ?>
+<?php if (!empty($cond)): ?>
+selectedConditions.push({ value: '<?php echo $cond; ?>', name: document.querySelector('input[value="<?php echo $cond; ?>"]')?.nextElementSibling?.textContent || '<?php echo $cond; ?>' });
+<?php endif; ?>
+<?php endforeach; ?>
+updateSelectedConditions();
+<?php endif; ?>
 
 // Health conditions functionality
 document.querySelectorAll('.condition-checkbox input[type="checkbox"]').forEach(checkbox => {

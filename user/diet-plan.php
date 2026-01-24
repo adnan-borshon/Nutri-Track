@@ -18,14 +18,20 @@ $plan = $stmt->fetch();
 $hasPlan = !empty($plan);
 
 if ($hasPlan) {
-    // Get meal suggestions for this plan
-    $stmt = $db->prepare("SELECT dpm.*, f.name as food_name 
-                          FROM diet_plan_meals dpm 
-                          LEFT JOIN foods f ON dpm.food_id = f.id 
-                          WHERE dpm.diet_plan_id = ? 
-                          ORDER BY FIELD(dpm.meal_type, 'breakfast', 'lunch', 'snack', 'dinner')");
-    $stmt->execute([$plan['id']]);
-    $planMeals = $stmt->fetchAll();
+    // Get meal suggestions for this plan - check if table exists first
+    $planMeals = [];
+    try {
+        $stmt = $db->prepare("SELECT dpm.*, f.name as food_name 
+                              FROM diet_plan_meals dpm 
+                              LEFT JOIN foods f ON dpm.food_id = f.id 
+                              WHERE dpm.diet_plan_id = ? 
+                              ORDER BY FIELD(dpm.meal_type, 'breakfast', 'lunch', 'snack', 'dinner')");
+        $stmt->execute([$plan['id']]);
+        $planMeals = $stmt->fetchAll();
+    } catch (PDOException $e) {
+        // Table might not exist yet, continue with empty meals
+        $planMeals = [];
+    }
     
     // Organize meals by type
     $mealsByType = ['breakfast' => [], 'lunch' => [], 'snack' => [], 'dinner' => []];
