@@ -57,6 +57,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         exit;
     }
     
+    if ($_POST['action'] === 'update_guide') {
+        $id = intval($_POST['id'] ?? 0);
+        $title = trim($_POST['title'] ?? '');
+        $content = trim($_POST['content'] ?? '');
+        $category = trim($_POST['category'] ?? 'General');
+        $difficulty = $_POST['difficulty'] ?? 'beginner';
+        $readTime = intval($_POST['read_time'] ?? 5);
+        
+        if (empty($title) || empty($content)) {
+            echo json_encode(['success' => false, 'message' => 'Title and content are required']);
+            exit;
+        }
+        
+        // Handle image update
+        $imagePath = null;
+        $imageUrl = trim($_POST['image_url'] ?? '');
+        
+        // Check if URL is provided first
+        if (!empty($imageUrl) && filter_var($imageUrl, FILTER_VALIDATE_URL)) {
+            $imagePath = $imageUrl;
+        } elseif (isset($_FILES['image']) && $_FILES['image']['error'] === UPLOAD_ERR_OK) {
+            $uploadDir = '../uploads/guides/';
+            if (!is_dir($uploadDir)) {
+                mkdir($uploadDir, 0755, true);
+            }
+            
+            $fileExtension = strtolower(pathinfo($_FILES['image']['name'], PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif'];
+            
+            if (in_array($fileExtension, $allowedExtensions)) {
+                $fileName = uniqid() . '.' . $fileExtension;
+                $uploadPath = $uploadDir . $fileName;
+                
+                if (move_uploaded_file($_FILES['image']['tmp_name'], $uploadPath)) {
+                    $imagePath = 'uploads/guides/' . $fileName;
+                }
+            }
+        }
+        
+        try {
+            if ($imagePath) {
+                $stmt = $db->prepare("UPDATE nutrition_guides SET title = ?, content = ?, category = ?, difficulty = ?, read_time = ?, image_path = ? WHERE id = ? AND nutritionist_id = ?");
+                $stmt->execute([$title, $content, $category, $difficulty, $readTime, $imagePath, $id, $currentUser['id']]);
+            } else {
+                $stmt = $db->prepare("UPDATE nutrition_guides SET title = ?, content = ?, category = ?, difficulty = ?, read_time = ? WHERE id = ? AND nutritionist_id = ?");
+                $stmt->execute([$title, $content, $category, $difficulty, $readTime, $id, $currentUser['id']]);
+            }
+            echo json_encode(['success' => true, 'message' => 'Guide updated successfully']);
+        } catch (PDOException $e) {
+            error_log("Update guide error: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'Database error occurred']);
+        }
+        exit;
+    }
+    
     if ($_POST['action'] === 'delete_guide') {
         $id = intval($_POST['id'] ?? 0);
         try {
@@ -136,7 +191,7 @@ include 'header.php';
                 <?php foreach ($guides as $g): 
                     $colors = $categoryColors[$g['category']] ?? $categoryColors['General'];
                 ?>
-                <tr style="border-bottom: 1px solid #e5e7eb;" data-id="<?php echo $g['id']; ?>">
+                <tr style="border-bottom: 1px solid #e5e7eb; cursor: pointer;" data-id="<?php echo $g['id']; ?>" onclick="viewGuide(<?php echo $g['id']; ?>)">
                     <td style="padding: 1rem;">
                         <div style="font-weight: 500; color: #111827;"><?php echo htmlspecialchars($g['title']); ?></div>
                         <div style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;"><?php echo htmlspecialchars(substr($g['content'], 0, 60)) . (strlen($g['content']) > 60 ? '...' : ''); ?></div>
@@ -147,7 +202,10 @@ include 'header.php';
                     <td style="padding: 1rem; font-size: 0.875rem; color: #374151; text-transform: capitalize;"><?php echo htmlspecialchars($g['difficulty']); ?></td>
                     <td style="padding: 1rem; text-align: center; font-size: 0.875rem; color: #374151;"><?php echo $g['read_time']; ?> min</td>
                     <td style="padding: 1rem; text-align: center;">
-                        <button onclick="deleteGuide(<?php echo $g['id']; ?>)" style="padding: 0.375rem 0.75rem; font-size: 0.75rem; background: #fef2f2; color: #dc2626; border: none; border-radius: 0.25rem; cursor: pointer;">Delete</button>
+                        <div style="display: flex; gap: 0.5rem; justify-content: center;">
+                            <button onclick="event.stopPropagation(); editGuide(<?php echo $g['id']; ?>)" class="btn btn-outline btn-sm">Edit</button>
+                            <button onclick="event.stopPropagation(); deleteGuide(<?php echo $g['id']; ?>)" class="btn btn-outline btn-sm" style="color: #dc2626; border-color: #dc2626;">Delete</button>
+                        </div>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -224,6 +282,130 @@ function showCreateGuideModal() {
         e.preventDefault();
         const formData = new FormData(this);
         formData.append('action', 'add_guide');
+        
+        fetch('guides.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showNotification(data.message, 'success');
+                closeGuideModal();
+                location.reload();
+            } else {
+                showNotification(data.message, 'error');
+            }
+        })
+        .catch(() => showNotification('An error occurred', 'error'));
+    });
+}
+
+function viewGuide(id) {
+    // Get guide data
+    const guides = <?php echo json_encode($guides); ?>;
+    const guide = guides.find(g => g.id == id);
+    if (!guide) return;
+    
+    const modal = document.createElement('div');
+    modal.className = 'admin-modal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 2rem; border-radius: 0.5rem; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">${guide.title}</h3>
+                <button onclick="closeGuideModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            ${guide.image_path ? `<img src="${guide.image_path.startsWith('http') ? guide.image_path : '../' + guide.image_path}" alt="Guide Image" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 0.375rem; margin-bottom: 1rem;">` : ''}
+            <div style="margin-bottom: 1rem;">
+                <span style="background: #dcfce7; color: #278b63; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500; margin-right: 0.5rem;">${guide.category}</span>
+                <span style="background: #f3f4f6; color: #374151; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; text-transform: capitalize;">${guide.difficulty}</span>
+                <span style="color: #6b7280; font-size: 0.75rem; margin-left: 0.5rem;">${guide.read_time} min read</span>
+            </div>
+            <div style="line-height: 1.6; color: #374151; white-space: pre-wrap;">${guide.content}</div>
+            <div style="margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; display: flex; justify-content: flex-end;">
+                <button onclick="closeGuideModal()" style="padding: 0.5rem 1rem; border: 1px solid #d1d5db; background: white; border-radius: 0.375rem; cursor: pointer;">Close</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+}
+
+function editGuide(id) {
+    // Get guide data
+    const guides = <?php echo json_encode($guides); ?>;
+    const guide = guides.find(g => g.id == id);
+    if (!guide) return;
+    
+    const modal = document.createElement('div');
+    modal.className = 'admin-modal';
+    modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
+    
+    modal.innerHTML = `
+        <div style="background: white; padding: 2rem; border-radius: 0.5rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Edit Guide</h3>
+                <button onclick="closeGuideModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+            </div>
+            <form id="editGuideForm" enctype="multipart/form-data">
+                <input type="hidden" name="id" value="${guide.id}">
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Title</label>
+                    <input type="text" name="title" value="${guide.title}" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Featured Image</label>
+                    ${guide.image_path ? `<div style="margin-bottom: 0.5rem;"><img src="${guide.image_path.startsWith('http') ? guide.image_path : '../' + guide.image_path}" alt="Current Image" style="width: 100px; height: 60px; object-fit: cover; border-radius: 0.375rem;"></div>` : ''}
+                    <input type="file" name="image" accept="image/*" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem; margin-bottom: 0.5rem;">
+                    <p style="font-size: 0.75rem; color: #6b7280; margin: 0.5rem 0;">OR</p>
+                    <input type="url" name="image_url" placeholder="https://example.com/image.jpg" value="${guide.image_path && guide.image_path.startsWith('http') ? guide.image_path : ''}" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                    <p style="font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem;">Upload a new file or enter an image URL</p>
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Category</label>
+                        <select name="category" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                            <option value="General" ${guide.category === 'General' ? 'selected' : ''}>General</option>
+                            <option value="Meal Planning" ${guide.category === 'Meal Planning' ? 'selected' : ''}>Meal Planning</option>
+                            <option value="Hydration" ${guide.category === 'Hydration' ? 'selected' : ''}>Hydration</option>
+                            <option value="Exercise" ${guide.category === 'Exercise' ? 'selected' : ''}>Exercise</option>
+                            <option value="Shopping" ${guide.category === 'Shopping' ? 'selected' : ''}>Shopping</option>
+                            <option value="Weight Management" ${guide.category === 'Weight Management' ? 'selected' : ''}>Weight Management</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Difficulty</label>
+                        <select name="difficulty" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                            <option value="beginner" ${guide.difficulty === 'beginner' ? 'selected' : ''}>Beginner</option>
+                            <option value="intermediate" ${guide.difficulty === 'intermediate' ? 'selected' : ''}>Intermediate</option>
+                            <option value="advanced" ${guide.difficulty === 'advanced' ? 'selected' : ''}>Advanced</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Read Time (minutes)</label>
+                    <input type="number" name="read_time" value="${guide.read_time}" min="1" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
+                </div>
+                <div style="margin-bottom: 1rem;">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Content</label>
+                    <textarea name="content" rows="8" required style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">${guide.content}</textarea>
+                </div>
+                <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                    <button type="button" onclick="closeGuideModal()" style="padding: 0.5rem 1rem; border: 1px solid #d1d5db; background: white; border-radius: 0.375rem; cursor: pointer;">Cancel</button>
+                    <button type="submit" style="padding: 0.5rem 1rem; background: #278b63; color: white; border: none; border-radius: 0.375rem; cursor: pointer;">Update Guide</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    document.getElementById('editGuideForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        formData.append('action', 'update_guide');
         
         fetch('guides.php', {
             method: 'POST',

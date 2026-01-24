@@ -9,22 +9,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json');
     $db = getDB();
     
-    if ($_POST['action'] === 'update_profile') {
-        // Debug: Log received POST data
-        error_log('POST data received: ' . print_r($_POST, true));
-        error_log('FILES data received: ' . print_r($_FILES, true));
+if ($_POST['action'] === 'update_profile') {
+    // Enhanced debugging
+    error_log('=== PROFILE UPDATE DEBUG ===');
+    error_log('POST data: ' . print_r($_POST, true));
+    error_log('FILES data: ' . print_r($_FILES, true));
+    
+    // Check if data exists first
+    if (!isset($_POST['name']) || !isset($_POST['email'])) {
+        error_log('CRITICAL: name or email not in POST array');
+        error_log('POST keys: ' . implode(', ', array_keys($_POST)));
+        echo json_encode(['success' => false, 'message' => 'Form data not received properly', 'debug' => $_POST]);
+        exit;
+    }
+    
+    $name = trim($_POST['name']);
+    $email = trim($_POST['email']);
+    $phone = trim($_POST['phone'] ?? '');
+    $specialty = trim($_POST['specialty'] ?? '');
+    $bio = trim($_POST['bio'] ?? '');
         
-        $name = trim($_POST['name'] ?? '');
-        $email = trim($_POST['email'] ?? '');
-        $phone = trim($_POST['phone'] ?? '');
-        $specialty = trim($_POST['specialty'] ?? '');
-        $bio = trim($_POST['bio'] ?? '');
-        
-        // Debug: Log processed values
-        error_log("Processed values - Name: '$name', Email: '$email'");
+        error_log("Values after trim - Name: '$name', Email: '$email', Phone: '$phone'");
         
         if (empty($name) || empty($email)) {
-            echo json_encode(['success' => false, 'message' => 'Name and email are required']);
+            error_log('VALIDATION FAILED: Name or email is empty');
+            echo json_encode(['success' => false, 'message' => 'Name and email are required', 'debug' => ['name' => $name, 'email' => $email]]);
             exit;
         }
         
@@ -137,11 +146,11 @@ include 'header.php';
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Full Name</label>
-                        <input type="text" id="profileName" name="name" class="form-input" value="<?php echo htmlspecialchars($user['name']); ?>">
+                        <input type="text" id="profileName" name="name" class="form-input" value="<?php echo htmlspecialchars($user['name']); ?>" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Email</label>
-                        <input type="email" id="profileEmail" name="email" class="form-input" value="<?php echo htmlspecialchars($user['email']); ?>">
+                        <input type="email" id="profileEmail" name="email" class="form-input" value="<?php echo htmlspecialchars($user['email']); ?>" required>
                     </div>
                 </div>
                 <div class="form-row">
@@ -159,7 +168,8 @@ include 'header.php';
                     <textarea id="profileBio" name="bio" class="form-textarea" placeholder="Tell users about yourself..."><?php echo htmlspecialchars($user['bio'] ?? ''); ?></textarea>
                 </div>
                 <div class="form-actions">
-                    <button type="submit" class="btn btn-primary" id="updateProfileBtn">Update Profile</button>
+                    <button type="button" class="btn btn-outline" onclick="testFormValues()" style="margin-right: 10px;">Test Values</button>
+                    <button type="button" class="btn btn-primary" id="updateProfileBtn">Update Profile</button>
                 </div>
             </form>
         </div>
@@ -207,11 +217,35 @@ document.getElementById('profileImageInput').addEventListener('change', function
     }
 });
 
-// Update Profile
-document.getElementById('profileForm').addEventListener('submit', async function(e) {
+// Update Profile - prevent conflict with nutritionist.js
+document.getElementById('updateProfileBtn').addEventListener('click', async function(e) {
     e.preventDefault();
-    console.log('Form submitted');
-    const formData = new FormData(this);
+    e.stopPropagation(); // Prevent other event handlers
+    
+    console.log('Update button clicked');
+    
+    // Client-side validation - get current field values
+    const nameField = document.getElementById('profileName');
+    const emailField = document.getElementById('profileEmail');
+    const name = nameField.value.trim();
+    const email = emailField.value.trim();
+    
+    console.log('Name field value:', name);
+    console.log('Email field value:', email);
+    
+    if (!name || !email) {
+        showNotification('Name and email are required', 'error');
+        // Highlight empty fields
+        if (!name) nameField.style.borderColor = '#dc2626';
+        if (!email) emailField.style.borderColor = '#dc2626';
+        return;
+    } else {
+        // Reset border colors if valid
+        nameField.style.borderColor = '';
+        emailField.style.borderColor = '';
+    }
+    
+    const formData = new FormData(document.getElementById('profileForm'));
     formData.append('action', 'update_profile');
     
     // Debug: log form data
@@ -221,14 +255,49 @@ document.getElementById('profileForm').addEventListener('submit', async function
     
     try {
         const response = await fetch('settings.php', { method: 'POST', body: formData });
-        const data = await response.json();
-        console.log('Response:', data);
+        const text = await response.text();
+        console.log('Raw response:', text);
+        
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error('JSON parse error:', e);
+            console.error('Response text:', text);
+            showNotification('Server error: Invalid response format', 'error');
+            return;
+        }
+        
+        console.log('Parsed response:', data);
         showNotification(data.message, data.success ? 'success' : 'error');
         if (data.success) setTimeout(() => location.reload(), 1000);
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Network error:', error);
         showNotification('Failed to update profile', 'error');
     }
+});
+
+// Test function to check form values
+function testFormValues() {
+    const name = document.getElementById('profileName').value;
+    const email = document.getElementById('profileEmail').value;
+    const phone = document.getElementById('profilePhone').value;
+    const specialty = document.getElementById('profileSpecialty').value;
+    const bio = document.getElementById('profileBio').value;
+    
+    console.log('Current form values:');
+    console.log('Name:', name);
+    console.log('Email:', email);
+    console.log('Phone:', phone);
+    console.log('Specialty:', specialty);
+    console.log('Bio:', bio);
+    
+    alert(`Name: ${name}\nEmail: ${email}\nPhone: ${phone}\nSpecialty: ${specialty}`);
+}
+
+// Prevent nutritionist.js from interfering with profile update
+document.getElementById('updateProfileBtn').addEventListener('click', function(e) {
+    e.stopPropagation(); // Prevent other event handlers from nutritionist.js
 });
 
 // Update Password

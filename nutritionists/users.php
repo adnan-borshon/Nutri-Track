@@ -61,7 +61,13 @@ include 'header.php';
                 <?php foreach ($assignedUsers as $u): ?>
                 <div class="user-card" data-name="<?php echo strtolower(htmlspecialchars($u['name'])); ?>">
                     <div class="user-card-content">
-                        <div class="user-avatar-large"><?php echo getInitials($u['name']); ?></div>
+                        <div class="user-avatar-large">
+                            <?php if (!empty($u['profile_image']) && file_exists(__DIR__ . '/../' . $u['profile_image'])): ?>
+                                <img src="../<?php echo htmlspecialchars($u['profile_image']); ?>" alt="Profile" style="width: 60px; height: 60px; border-radius: 50%; object-fit: cover;">
+                            <?php else: ?>
+                                <?php echo getInitials($u['name']); ?>
+                            <?php endif; ?>
+                        </div>
                         <h3 class="user-card-name"><?php echo htmlspecialchars($u['name']); ?></h3>
                         <p class="user-card-goal"><?php echo $u['goal'] ? ucwords(str_replace('_', ' ', $u['goal'])) . ' Goal' : 'No goal set'; ?></p>
                         <div class="user-card-stats">

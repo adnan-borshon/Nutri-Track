@@ -58,7 +58,7 @@ function getUserAvatar($user, $size = '2rem', $class = 'user-avatar') {
     if (!empty($user['profile_image']) && file_exists(__DIR__ . '/../' . $user['profile_image'])) {
         return '<img src="../' . htmlspecialchars($user['profile_image']) . '" alt="Profile" class="' . $class . '" style="width: ' . $size . '; height: ' . $size . '; border-radius: 50%; object-fit: cover;">';
     } else {
-        return '<div class="' . $class . '" style="width: ' . $size . '; height: ' . $size . ';">' . getUserInitials($user['name']) . '</div>';
+        return '<div class="' . $class . '" style="width: ' . $size . '; height: ' . $size . '; background: #278b63; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold;">' . getUserInitials($user['name']) . '</div>';
     }
 }
 

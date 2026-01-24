@@ -8,7 +8,7 @@ $user = getCurrentUser();
 $db = getDB();
 $nutritionist = null;
 if ($user['nutritionist_id']) {
-    $stmt = $db->prepare("SELECT id, name, email, specialty FROM users WHERE id = ?");
+    $stmt = $db->prepare("SELECT id, name, email, specialty, profile_image FROM users WHERE id = ?");
     $stmt->execute([$user['nutritionist_id']]);
     $nutritionist = $stmt->fetch();
 }
@@ -49,7 +49,11 @@ include 'header.php';
                     ?>
                     <div class="conversation-item active" data-user-id="<?= $nutritionist['id'] ?>" style="padding: 0.5rem; border-radius: 0.375rem; cursor: pointer; background: #f0fdf4;">
                         <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
-                            <div class="user-avatar" style="width: 2rem; height: 2rem; background: #278b63; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;"><?= $initials ?></div>
+                            <?php if (!empty($nutritionist['profile_image']) && file_exists(__DIR__ . '/../' . $nutritionist['profile_image'])): ?>
+                                <img src="../<?php echo htmlspecialchars($nutritionist['profile_image']); ?>" alt="Profile" style="width: 2rem; height: 2rem; border-radius: 50%; object-fit: cover;">
+                            <?php else: ?>
+                                <div class="user-avatar" style="width: 2rem; height: 2rem; background: #278b63; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;"><?= $initials ?></div>
+                            <?php endif; ?>
                             <div style="flex: 1; min-width: 0;">
                                 <p style="font-weight: 500; font-size: 0.875rem; margin: 0 0 0.25rem 0;"><?= htmlspecialchars($nutritionist['name']) ?> <span style="background: #dcfce7; color: #278b63; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.625rem; font-weight: 500;">Current</span></p>
                                 <p style="font-size: 0.75rem; color: #6b7280; margin: 0;"><?= htmlspecialchars($nutritionist['specialty'] ?? 'Nutritionist') ?></p>
@@ -70,7 +74,11 @@ include 'header.php';
             <?php if ($nutritionist): ?>
             <div style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; position: relative; z-index: 2; background: white;">
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <div id="currentChatAvatar" style="width: 2.5rem; height: 2.5rem; background: #278b63; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: bold;"><?= $initials ?></div>
+                    <?php if (!empty($nutritionist['profile_image']) && file_exists(__DIR__ . '/../' . $nutritionist['profile_image'])): ?>
+                        <img id="currentChatAvatar" src="../<?php echo htmlspecialchars($nutritionist['profile_image']); ?>" alt="Profile" style="width: 2.5rem; height: 2.5rem; border-radius: 50%; object-fit: cover;">
+                    <?php else: ?>
+                        <div id="currentChatAvatar" style="width: 2.5rem; height: 2.5rem; background: #278b63; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: bold;"><?= $initials ?></div>
+                    <?php endif; ?>
                     <div>
                         <h3 id="currentChatName" style="font-size: 1rem; font-weight: 600; margin: 0 0 0.25rem 0;"><?= htmlspecialchars($nutritionist['name']) ?></h3>
                         <span id="currentChatStatus" style="background: #dcfce7; color: #278b63; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500;"><?= htmlspecialchars($nutritionist['specialty'] ?? 'Nutritionist') ?></span>
