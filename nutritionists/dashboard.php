@@ -41,6 +41,17 @@ $stmt = $db->prepare("SELECT m.*, u.name as sender_name
 $stmt->execute([$nutritionistId]);
 $recentMessages = $stmt->fetchAll();
 
+// Helper function for time ago
+function timeAgo($datetime) {
+    if (!$datetime) return 'Never';
+    $time = strtotime($datetime);
+    $diff = time() - $time;
+    if ($diff < 60) return 'Just now';
+    if ($diff < 3600) return floor($diff / 60) . ' min ago';
+    if ($diff < 86400) return floor($diff / 3600) . ' hours ago';
+    return floor($diff / 86400) . ' days ago';
+}
+
 include 'header.php';
 ?>
 
@@ -127,73 +138,34 @@ include 'header.php';
             <div class="card-content">
             
                 <div class="space-y-4">
+                    <?php if (empty($assignedUsers)): ?>
+                    <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                        <p>No users assigned yet.</p>
+                    </div>
+                    <?php else: ?>
+                    <?php foreach ($assignedUsers as $u): 
+                        $initials = strtoupper(substr($u['name'], 0, 1) . (strpos($u['name'], ' ') ? substr($u['name'], strpos($u['name'], ' ') + 1, 1) : ''));
+                        $goalText = $u['goal'] ? ucwords(str_replace('_', ' ', $u['goal'])) : 'No goal set';
+                        $lastActive = $u['updated_at'] ? timeAgo($u['updated_at']) : 'Never';
+                    ?>
                     <div class="user-row">
                         <div class="user-info">
-                            <div class="user-avatar">JD</div>
+                            <div class="user-avatar"><?php echo $initials; ?></div>
                             <div>
-                                <p class="user-name">John Doe</p>
-                                <p class="user-goal">Weight Loss</p>
+                                <p class="user-name"><?php echo htmlspecialchars($u['name']); ?></p>
+                                <p class="user-goal"><?php echo $goalText; ?></p>
                             </div>
                         </div>
                         <div class="user-meta">
                             <div class="user-progress">
-                                <p class="progress-value">75%</p>
-                                <p class="last-active">2 hours ago</p>
+                                <p class="progress-value">Active</p>
+                                <p class="last-active"><?php echo $lastActive; ?></p>
                             </div>
-                            <a href="user-detail.php?id=1" class="btn btn-outline btn-sm">View</a>
+                            <a href="user-detail.php?id=<?php echo $u['id']; ?>" class="btn btn-outline btn-sm" onclick="event.stopPropagation(); window.location.href=this.href; return false;">View</a>
                         </div>
                     </div>
-                
-                    <div class="user-row">
-                        <div class="user-info">
-                            <div class="user-avatar">JS</div>
-                            <div>
-                                <p class="user-name">Jane Smith</p>
-                                <p class="user-goal">Build Muscle</p>
-                            </div>
-                        </div>
-                        <div class="user-meta">
-                            <div class="user-progress">
-                                <p class="progress-value">45%</p>
-                                <p class="last-active">1 day ago</p>
-                            </div>
-                            <a href="user-detail.php?id=2" class="btn btn-outline btn-sm">View</a>
-                        </div>
-                    </div>
-                
-                    <div class="user-row">
-                        <div class="user-info">
-                            <div class="user-avatar">MJ</div>
-                            <div>
-                                <p class="user-name">Mike Johnson</p>
-                                <p class="user-goal">Maintain</p>
-                            </div>
-                        </div>
-                        <div class="user-meta">
-                            <div class="user-progress">
-                                <p class="progress-value">90%</p>
-                                <p class="last-active">30 min ago</p>
-                            </div>
-                            <a href="user-detail.php?id=3" class="btn btn-outline btn-sm">View</a>
-                        </div>
-                    </div>
-                
-                    <div class="user-row">
-                        <div class="user-info">
-                            <div class="user-avatar">ED</div>
-                            <div>
-                                <p class="user-name">Emily Davis</p>
-                                <p class="user-goal">Weight Loss</p>
-                            </div>
-                        </div>
-                        <div class="user-meta">
-                            <div class="user-progress">
-                                <p class="progress-value">60%</p>
-                                <p class="last-active">5 hours ago</p>
-                            </div>
-                            <a href="user-detail.php?id=4" class="btn btn-outline btn-sm">View</a>
-                        </div>
-                    </div>
+                    <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>

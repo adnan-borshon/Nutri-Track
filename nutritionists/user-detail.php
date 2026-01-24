@@ -26,21 +26,38 @@ $stmt = $db->prepare("SELECT * FROM diet_plans WHERE user_id = ? AND status = 'a
 $stmt->execute([$userId]);
 $dietPlan = $stmt->fetch();
 
-// Get diet plan meals if plan exists
+// Get diet plan meals organized by day and meal type
 $planMeals = [];
 if ($dietPlan) {
-    $stmt = $db->prepare("SELECT dpm.*, f.name as food_name, f.calories 
-                          FROM diet_plan_meals dpm 
-                          LEFT JOIN foods f ON dpm.food_id = f.id 
-                          WHERE dpm.diet_plan_id = ?");
+    // First try with day_of_week column
+    $stmt = $db->prepare("SELECT * FROM diet_plan_meals WHERE diet_plan_id = ? ORDER BY id");
     $stmt->execute([$dietPlan['id']]);
     $planMeals = $stmt->fetchAll();
 }
 
-// Organize meals by type
-$mealsByType = ['breakfast' => [], 'lunch' => [], 'dinner' => [], 'snack' => []];
-foreach ($planMeals as $meal) {
-    $mealsByType[$meal['meal_type']][] = $meal;
+// Organize meals by day and type - handle different column structures
+$mealsByDay = [];
+$days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+foreach ($days as $day) {
+    $mealsByDay[$day] = ['breakfast' => [], 'lunch' => [], 'dinner' => [], 'snack' => []];
+}
+
+// Debug: Check what columns exist in the data
+if (!empty($planMeals)) {
+    $sampleMeal = $planMeals[0];
+    // Handle different possible column names
+    foreach ($planMeals as $meal) {
+        // Try different day column names
+        $day = strtolower($meal['day_of_week'] ?? $meal['day'] ?? 'monday');
+        // Try different meal type column names  
+        $type = strtolower($meal['meal_type'] ?? $meal['type'] ?? 'breakfast');
+        
+        // Ensure day and type are valid
+        if (!in_array($day, $days)) $day = 'monday';
+        if (!in_array($type, ['breakfast', 'lunch', 'dinner', 'snack'])) $type = 'breakfast';
+        
+        $mealsByDay[$day][$type][] = $meal;
+    }
 }
 
 // Get weight progress (last 8 weeks)
@@ -83,9 +100,6 @@ include 'header.php';
             <a href="chat.php?user=<?php echo $userId; ?>" class="btn btn-primary">
 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-message" style="vertical-align:middle;margin-right:4px;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M8 9h8" /><path d="M8 13h6" /><path d="M18 4a3 3 0 0 1 3 3v8a3 3 0 0 1 -3 3h-5l-5 3v-3h-2a3 3 0 0 1 -3 -3v-8a3 3 0 0 1 3 -3h12z" /></svg> Chat
             </a>
-            <button class="btn btn-outline" onclick="editUserPlan()">
-<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-clipboard-list" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" /><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z" /><path d="M9 12l.01 0" /><path d="M13 12l2 0" /><path d="M9 16l.01 0" /><path d="M13 16l2 0" /></svg> Edit Plan
-            </button>
         </div>
     </div>
 </div>
@@ -148,40 +162,82 @@ include 'header.php';
         <div class="card-content">
             <h3 class="card-title">Current Diet Plan</h3>
             <?php if ($dietPlan): ?>
-            <div class="recipe-meta">
+            <div class="recipe-meta" style="margin-bottom: 1rem;">
                 <span>
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-flame" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12c2 -2.96 0 -7 -1 -8c0 3.038 -1.773 4.741 -3 6c-1.226 1.26 -2 3.24 -2 5a6 6 0 1 0 12 0c0 -1.532 -1.056 -3.94 -2 -5c-1.786 2 -3.544 1.844 -4 2z" /></svg> <?php echo number_format($dietPlan['daily_calories']); ?> calories/day
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-flame" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M12 12c2 -2.96 0 -7 -1 -8c0 3.038 -1.773 4.741 -3 6c-1.226 1.26 -2 3.24 -2 5a6 6 0 1 0 12 0c0 -1.532 -1.056 -3.94 -2 -5c-1.786 2 -3.544 1.844 -4 2z" /></svg> <?php echo number_format($dietPlan['daily_calories'] ?? 0); ?> calories/day
                 </span>
                 <span>
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-meat" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M13.62 8.382l1.966 -1.967a2 2 0 1 1 2.828 2.828l-1.966 1.967" /><path d="M10.5 11.5l-3.5 -3.5a2 2 0 1 1 2.828 -2.828l3.5 3.5" /><path d="M8 16l2 2" /><path d="M10.5 16.5l4.5 -4.5" /><path d="M12 18l2 2" /><path d="M16 12l-4.5 4.5" /><path d="M18 10l2 2" /><path d="M20 8l-8 8" /></svg> <?php echo htmlspecialchars($dietPlan['name']); ?>
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon icon-tabler icons-tabler-outline icon-tabler-meat" style="vertical-align:middle;margin-right:4px;color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M13.62 8.382l1.966 -1.967a2 2 0 1 1 2.828 2.828l-1.966 1.967" /><path d="M10.5 11.5l-3.5 -3.5a2 2 0 1 1 2.828 -2.828l3.5 3.5" /><path d="M8 16l2 2" /><path d="M10.5 16.5l4.5 -4.5" /><path d="M12 18l2 2" /><path d="M16 12l-4.5 4.5" /><path d="M18 10l2 2" /><path d="M20 8l-8 8" /></svg> <?php echo htmlspecialchars($dietPlan['name'] ?? 'Diet Plan'); ?>
                 </span>
             </div>
             
-            <div class="admin-activity-list">
+            <!-- Day Selection Tabs -->
+            <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;">
                 <?php 
-                $mealIcons = [
+                $dayLabels = [
+                    'monday' => 'Mon',
+                    'tuesday' => 'Tue', 
+                    'wednesday' => 'Wed',
+                    'thursday' => 'Thu',
+                    'friday' => 'Fri',
+                    'saturday' => 'Sat',
+                    'sunday' => 'Sun'
+                ];
+                $firstDay = true;
+                foreach ($dayLabels as $day => $dayLabel):
+                    $hasAnyMeals = array_sum(array_map('count', $mealsByDay[$day])) > 0;
+                    if ($hasAnyMeals):
+                ?>
+                <button onclick="showDay('<?php echo $day; ?>')" class="day-tab <?php echo $firstDay ? 'active' : ''; ?>" data-day="<?php echo $day; ?>" style="padding: 0.5rem 1rem; border: 1px solid #e5e7eb; border-radius: 0.375rem; background: <?php echo $firstDay ? '#278b63' : 'white'; ?>; color: <?php echo $firstDay ? 'white' : '#374151'; ?>; cursor: pointer; font-size: 0.875rem; font-weight: 500;"><?php echo $dayLabel; ?></button>
+                <?php $firstDay = false; endif; endforeach; ?>
+            </div>
+            
+            <!-- Day Content -->
+            <div id="dayContent">
+                <?php 
+                $mealLabels = [
                     'breakfast' => 'Breakfast',
-                    'lunch' => 'Lunch', 
+                    'lunch' => 'Lunch',
                     'dinner' => 'Dinner',
                     'snack' => 'Snacks'
                 ];
-                foreach ($mealIcons as $type => $label):
-                    $items = $mealsByType[$type];
-                    $itemNames = array_map(fn($m) => $m['food_name'] ?: $m['custom_food_name'], $items);
-                    $totalCal = array_sum(array_column($items, 'calories'));
+                $firstDayContent = true;
+                foreach ($dayLabels as $day => $dayLabel):
+                    $dayMeals = $mealsByDay[$day];
+                    $hasAnyMeals = array_sum(array_map('count', $dayMeals)) > 0;
+                    if ($hasAnyMeals):
                 ?>
-                <div class="admin-activity-item">
-                    <div class="admin-activity-info">
-                        <div class="card-icon">
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#278b63;"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><circle cx="12" cy="12" r="9"/></svg>
+                <div class="day-content" data-day="<?php echo $day; ?>" style="display: <?php echo $firstDayContent ? 'block' : 'none'; ?>;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <?php foreach ($mealLabels as $type => $label):
+                            $items = $dayMeals[$type];
+                            if (!empty($items)):
+                                $itemNames = array_map(function($m) {
+                                    // The meal_items field contains the actual meal description
+                                    return $m['meal_items'] ?? $m['food_name'] ?? $m['custom_food_name'] ?? $m['name'] ?? $m['item_name'] ?? $m['description'] ?? 'No meal specified';
+                                }, $items);
+                                $totalCal = array_sum(array_map(function($m) {
+                                    return $m['calories'] ?? $m['calorie'] ?? $m['cal'] ?? 0;
+                                }, $items));
+                        ?>
+                        <div style="border: 1px solid #e5e7eb; border-radius: 0.5rem; padding: 1rem; background: #f9fafb;">
+                            <h5 style="margin: 0 0 0.5rem 0; color: #278b63; font-weight: 600; font-size: 0.875rem;"><?php echo $label; ?></h5>
+                            <div style="font-size: 0.75rem; color: #6b7280; line-height: 1.4;">
+                                <?php foreach ($itemNames as $item): ?>
+                                <div style="margin-bottom: 0.25rem;">• <?php echo htmlspecialchars($item ?: 'No meal specified'); ?></div>
+                                <?php endforeach; ?>
+                                <?php if ($totalCal): ?>
+                                <div style="margin-top: 0.5rem; font-weight: 500; color: #278b63;"><?php echo $totalCal; ?> calories</div>
+                                <?php endif; ?>
+                            </div>
                         </div>
-                        <div>
-                            <p class="admin-activity-title"><?php echo $label; ?></p>
-                            <p class="admin-activity-subtitle"><?php echo !empty($itemNames) ? implode(', ', $itemNames) : 'Not specified'; ?><?php echo $totalCal ? " • {$totalCal} cal" : ''; ?></p>
-                        </div>
+                        <?php endif; endforeach; ?>
                     </div>
                 </div>
-                <?php endforeach; ?>
+                <?php $firstDayContent = false; endif; endforeach; ?>
+                <?php if (!array_sum(array_map(fn($day) => array_sum(array_map('count', $day)), $mealsByDay))): ?>
+                <p style="color: #6b7280; text-align: center; padding: 1rem;">No meals planned yet.</p>
+                <?php endif; ?>
             </div>
             <?php else: ?>
             <p style="color: #6b7280; text-align: center; padding: 1rem;">No diet plan assigned yet.</p>
@@ -223,8 +279,31 @@ include 'header.php';
 </div>
 
 <script>
-function editUserPlan() {
-    showNotification('Edit plan feature coming soon!', 'info');
+function showDay(day) {
+    // Hide all day contents
+    document.querySelectorAll('.day-content').forEach(content => {
+        content.style.display = 'none';
+    });
+    
+    // Show selected day content
+    const selectedContent = document.querySelector(`.day-content[data-day="${day}"]`);
+    if (selectedContent) {
+        selectedContent.style.display = 'block';
+    }
+    
+    // Update tab styles
+    document.querySelectorAll('.day-tab').forEach(tab => {
+        tab.style.background = 'white';
+        tab.style.color = '#374151';
+        tab.classList.remove('active');
+    });
+    
+    const selectedTab = document.querySelector(`.day-tab[data-day="${day}"]`);
+    if (selectedTab) {
+        selectedTab.style.background = '#278b63';
+        selectedTab.style.color = 'white';
+        selectedTab.classList.add('active');
+    }
 }
 
 function showNotification(message, type = 'info') {
