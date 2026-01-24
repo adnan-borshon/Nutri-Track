@@ -261,6 +261,20 @@ function closeProfilePopup() {
     document.body.style.overflow = 'auto';
 }
 
+function toggleNotifications() {
+    const dropdown = document.getElementById('notificationDropdown');
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('notificationDropdown');
+    const btn = document.getElementById('notificationBtn');
+    if (dropdown && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+        dropdown.style.display = 'none';
+    }
+});
+
 // Close popup when clicking outside
 document.getElementById('profilePopup').addEventListener('click', function(e) {
     if (e.target === this) {
@@ -272,6 +286,7 @@ document.getElementById('profilePopup').addEventListener('click', function(e) {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeProfilePopup();
+        document.getElementById('notificationDropdown').style.display = 'none';
     }
 });
 </script>

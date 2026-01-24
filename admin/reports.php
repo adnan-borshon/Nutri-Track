@@ -4,6 +4,52 @@ checkAuth('admin');
 
 $db = getDB();
 
+// Get all users for selection
+$stmt = $db->query("SELECT id, name, email FROM users WHERE role = 'user' ORDER BY name ASC");
+$allUsers = $stmt->fetchAll();
+
+// Check if a specific user is selected
+$selectedUserId = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
+$selectedUser = null;
+$userReport = null;
+
+if ($selectedUserId > 0) {
+    $stmt = $db->prepare("SELECT * FROM users WHERE id = ? AND role = 'user'");
+    $stmt->execute([$selectedUserId]);
+    $selectedUser = $stmt->fetch();
+    
+    if ($selectedUser) {
+        // Get user-specific report data
+        $stmt = $db->prepare("SELECT COUNT(*) FROM meal_logs WHERE user_id = ?");
+        $stmt->execute([$selectedUserId]);
+        $userMealLogs = $stmt->fetchColumn();
+        
+        $stmt = $db->prepare("SELECT COUNT(*) FROM water_logs WHERE user_id = ?");
+        $stmt->execute([$selectedUserId]);
+        $userWaterLogs = $stmt->fetchColumn();
+        
+        $stmt = $db->prepare("SELECT COUNT(*) FROM sleep_logs WHERE user_id = ?");
+        $stmt->execute([$selectedUserId]);
+        $userSleepLogs = $stmt->fetchColumn();
+        
+        $stmt = $db->prepare("SELECT COUNT(*) FROM appointments WHERE user_id = ?");
+        $stmt->execute([$selectedUserId]);
+        $userAppointments = $stmt->fetchColumn();
+        
+        $stmt = $db->prepare("SELECT AVG(calories) as avg_cal FROM (SELECT SUM(f.calories * ml.servings) as calories FROM meal_logs ml JOIN foods f ON ml.food_id = f.id WHERE ml.user_id = ? GROUP BY ml.log_date) as daily");
+        $stmt->execute([$selectedUserId]);
+        $avgCalories = round($stmt->fetchColumn() ?: 0);
+        
+        $userReport = [
+            'meal_logs' => $userMealLogs,
+            'water_logs' => $userWaterLogs,
+            'sleep_logs' => $userSleepLogs,
+            'appointments' => $userAppointments,
+            'avg_calories' => $avgCalories
+        ];
+    }
+}
+
 // Get real stats
 $stmt = $db->query("SELECT COUNT(*) FROM users WHERE role = 'user'");
 $totalUsers = $stmt->fetchColumn();
@@ -47,10 +93,59 @@ $recentUsers = $stmt->fetchAll();
 include 'header.php';
 ?>
 
-<div class="section-header">
-    <h1 class="section-title">Reports & Analytics</h1>
-    <p class="section-description">Platform insights and performance metrics</p>
+<div class="section-header" style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h1 class="section-title">Reports & Analytics</h1>
+        <p class="section-description">Platform insights and performance metrics</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <select id="userSelect" onchange="window.location.href='reports.php' + (this.value ? '?user_id=' + this.value : '')" style="padding: 0.5rem 1rem; border: 1px solid #d1d5db; border-radius: 0.375rem; font-size: 0.875rem; min-width: 200px;">
+            <option value="">All Users Report</option>
+            <?php foreach ($allUsers as $u): ?>
+            <option value="<?php echo $u['id']; ?>" <?php echo $selectedUserId == $u['id'] ? 'selected' : ''; ?>><?php echo htmlspecialchars($u['name']); ?></option>
+            <?php endforeach; ?>
+        </select>
+        <button onclick="generatePDFReport()" class="btn btn-primary" style="white-space: nowrap;">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;stroke-width:1.5;margin-right:4px;">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M16.5 12 12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Export PDF
+        </button>
+    </div>
 </div>
+
+<?php if ($selectedUser && $userReport): ?>
+<div class="card" style="margin-bottom: 1.5rem; border-left: 4px solid #278b63;">
+    <div class="card-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="margin: 0; font-size: 1.125rem; font-weight: 600;">Individual Report: <?php echo htmlspecialchars($selectedUser['name']); ?></h3>
+            <a href="reports.php" style="color: #278b63; font-size: 0.875rem;">← Back to All Users</a>
+        </div>
+        <div class="stats" style="margin: 0;">
+            <div class="stat-card" style="background: #f0fdf4;">
+                <div class="stat-value" style="color: #278b63;"><?php echo $userReport['meal_logs']; ?></div>
+                <div class="stat-label">Meal Logs</div>
+            </div>
+            <div class="stat-card" style="background: #eff6ff;">
+                <div class="stat-value" style="color: #3b82f6;"><?php echo $userReport['water_logs']; ?></div>
+                <div class="stat-label">Water Logs</div>
+            </div>
+            <div class="stat-card" style="background: #faf5ff;">
+                <div class="stat-value" style="color: #8b5cf6;"><?php echo $userReport['sleep_logs']; ?></div>
+                <div class="stat-label">Sleep Logs</div>
+            </div>
+            <div class="stat-card" style="background: #fef3c7;">
+                <div class="stat-value" style="color: #f59e0b;"><?php echo $userReport['appointments']; ?></div>
+                <div class="stat-label">Appointments</div>
+            </div>
+            <div class="stat-card" style="background: #fce7f3;">
+                <div class="stat-value" style="color: #ec4899;"><?php echo number_format($userReport['avg_calories']); ?></div>
+                <div class="stat-label">Avg Daily Cal</div>
+            </div>
+        </div>
+    </div>
+</div>
+<?php endif; ?>
 
 <div class="stats">
     <div class="stat-card">
@@ -140,5 +235,101 @@ include 'header.php';
         </div>
     </div>
 </div>
+
+<script>
+function generatePDFReport() {
+    const selectedUser = document.getElementById('userSelect').value;
+    const userName = selectedUser ? document.getElementById('userSelect').options[document.getElementById('userSelect').selectedIndex].text : 'All Users';
+    
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>NutriTrack Admin Report</title>
+            <style>
+                body { font-family: Arial, sans-serif; padding: 40px; color: #333; }
+                h1 { color: #278b63; border-bottom: 2px solid #278b63; padding-bottom: 10px; }
+                h2 { color: #278b63; margin-top: 30px; }
+                .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+                .stats { display: flex; gap: 20px; margin: 20px 0; flex-wrap: wrap; }
+                .stat-box { flex: 1; min-width: 120px; background: #f0fdf4; padding: 20px; border-radius: 8px; text-align: center; }
+                .stat-value { font-size: 28px; font-weight: bold; color: #278b63; }
+                .stat-label { font-size: 12px; color: #666; margin-top: 5px; }
+                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+                th { background: #278b63; color: white; }
+                tr:nth-child(even) { background: #f9f9f9; }
+                .footer { margin-top: 40px; text-align: center; color: #888; font-size: 12px; border-top: 1px solid #ddd; padding-top: 20px; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>NutriTrack Admin Report</h1>
+                <div style="text-align: right;">
+                    <p><strong>Report For:</strong> ${userName}</p>
+                    <p><strong>Generated:</strong> ${new Date().toLocaleDateString()}</p>
+                </div>
+            </div>
+            
+            <h2>Platform Statistics</h2>
+            <div class="stats">
+                <div class="stat-box">
+                    <div class="stat-value"><?php echo $totalUsers; ?></div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value"><?php echo $totalNutritionists; ?></div>
+                    <div class="stat-label">Nutritionists</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value"><?php echo $activePlans; ?></div>
+                    <div class="stat-label">Active Plans</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-value"><?php echo $successRate; ?>%</div>
+                    <div class="stat-label">Weekly Active Rate</div>
+                </div>
+            </div>
+            
+            <h2>Goal Distribution</h2>
+            <table>
+                <thead><tr><th>Goal Type</th><th>Users</th><th>Percentage</th></tr></thead>
+                <tbody>
+                    <?php foreach ($defaultGoals as $key => $label): ?>
+                    <tr>
+                        <td><?php echo $label; ?></td>
+                        <td><?php echo $goalDistribution[$key] ?? 0; ?></td>
+                        <td><?php echo round((($goalDistribution[$key] ?? 0) / $totalWithGoals) * 100); ?>%</td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            
+            <h2>Recent Registrations</h2>
+            <table>
+                <thead><tr><th>Name</th><th>Role</th><th>Date</th></tr></thead>
+                <tbody>
+                    <?php foreach ($recentUsers as $u): ?>
+                    <tr>
+                        <td><?php echo htmlspecialchars($u['name']); ?></td>
+                        <td><?php echo ucfirst($u['role']); ?></td>
+                        <td><?php echo date('M j, Y', strtotime($u['created_at'])); ?></td>
+                    </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+            
+            <div class="footer">
+                <p>Generated by NutriTrack Admin Panel</p>
+                <p>© <?php echo date('Y'); ?> NutriTrack - All Rights Reserved</p>
+            </div>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+</script>
 
 <?php include 'footer.php'; ?>
