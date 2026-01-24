@@ -1,41 +1,12 @@
 <?php
 require_once '../includes/session.php';
+require_once '../includes/notifications.php';
 checkAuth('user');
 $user = getCurrentUser();
 
 // Get notifications from database
-$db = getDB();
-$notifications = [];
-
-// Get unread messages
-$stmt = $db->prepare("SELECT m.*, u.name as sender_name FROM messages m JOIN users u ON m.sender_id = u.id WHERE m.receiver_id = ? AND m.is_read = 0 ORDER BY m.created_at DESC LIMIT 5");
-$stmt->execute([$user['id']]);
-$unreadMessages = $stmt->fetchAll();
-foreach ($unreadMessages as $msg) {
-    $notifications[] = [
-        'type' => 'message',
-        'title' => 'New message from ' . $msg['sender_name'],
-        'message' => substr($msg['message'], 0, 50) . '...',
-        'time' => $msg['created_at'],
-        'link' => 'chat.php'
-    ];
-}
-
-// Get upcoming appointments
-$stmt = $db->prepare("SELECT a.*, u.name as nutritionist_name FROM appointments a JOIN users u ON a.nutritionist_id = u.id WHERE a.user_id = ? AND a.status = 'scheduled' AND a.appointment_date >= CURDATE() ORDER BY a.appointment_date ASC LIMIT 3");
-$stmt->execute([$user['id']]);
-$upcomingAppts = $stmt->fetchAll();
-foreach ($upcomingAppts as $appt) {
-    $notifications[] = [
-        'type' => 'appointment',
-        'title' => 'Upcoming appointment',
-        'message' => 'With ' . $appt['nutritionist_name'] . ' on ' . date('M j', strtotime($appt['appointment_date'])),
-        'time' => $appt['created_at'],
-        'link' => 'appointments.php'
-    ];
-}
-
-$notificationCount = count($notifications);
+$notifications = getNotifications($user['id'], 5);
+$notificationCount = getUnreadNotificationCount($user['id']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -151,21 +122,41 @@ $notificationCount = count($notifications);
                                 </div>
                                 <?php else: ?>
                                 <?php foreach ($notifications as $notif): ?>
-                                <a href="<?php echo $notif['link']; ?>" style="display: block; padding: 0.75rem 1rem; border-bottom: 1px solid #f3f4f6; text-decoration: none; color: inherit;">
+                                <div style="display: block; padding: 0.75rem 1rem; border-bottom: 1px solid #f3f4f6;">
                                     <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
                                         <div style="width: 2rem; height: 2rem; background: <?php echo $notif['type'] === 'message' ? '#dbeafe' : '#dcfce7'; ?>; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                                            <?php if ($notif['type'] === 'message'): ?>
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                                            <?php else: ?>
+                                            <?php if ($notif['type'] === 'appointment_request' || $notif['type'] === 'appointment_update'): ?>
                                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#278b63" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                            <?php else: ?>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                                             <?php endif; ?>
                                         </div>
                                         <div style="flex: 1; min-width: 0;">
                                             <p style="margin: 0; font-size: 0.813rem; font-weight: 500; color: #111827;"><?php echo htmlspecialchars($notif['title']); ?></p>
                                             <p style="margin: 0.25rem 0 0; font-size: 0.75rem; color: #6b7280;"><?php echo htmlspecialchars($notif['message']); ?></p>
+                                            <p style="margin: 0.25rem 0 0; font-size: 0.625rem; color: #9ca3af;" data-timestamp="<?php echo strtotime($notif['created_at']); ?>"><?php 
+                                                $time = strtotime($notif['created_at']);
+                                                $now = time();
+                                                $diff = $now - $time;
+                                                
+                                                if ($diff < 60) {
+                                                    echo 'Just now';
+                                                } elseif ($diff < 3600) {
+                                                    echo floor($diff / 60) . ' minutes ago';
+                                                } elseif ($diff < 86400) {
+                                                    echo floor($diff / 3600) . ' hours ago';
+                                                } elseif ($diff < 604800) {
+                                                    echo floor($diff / 86400) . ' days ago';
+                                                } else {
+                                                    echo date('M j, Y', $time);
+                                                }
+                                            ?></p>
                                         </div>
+                                        <?php if (!$notif['is_read']): ?>
+                                        <div style="width: 8px; height: 8px; background: #dc2626; border-radius: 50%; flex-shrink: 0;"></div>
+                                        <?php endif; ?>
                                     </div>
-                                </a>
+                                </div>
                                 <?php endforeach; ?>
                                 <?php endif; ?>
                             </div>
@@ -249,6 +240,35 @@ $notificationCount = count($notifications);
 </div>
 
 <script>
+function updateNotificationTimes() {
+    const timeElements = document.querySelectorAll('[data-timestamp]');
+    const now = Math.floor(Date.now() / 1000);
+    
+    timeElements.forEach(element => {
+        const timestamp = parseInt(element.getAttribute('data-timestamp'));
+        const diff = now - timestamp;
+        
+        let timeText;
+        if (diff < 60) {
+            timeText = 'Just now';
+        } else if (diff < 3600) {
+            timeText = Math.floor(diff / 60) + ' minutes ago';
+        } else if (diff < 86400) {
+            timeText = Math.floor(diff / 3600) + ' hours ago';
+        } else if (diff < 604800) {
+            timeText = Math.floor(diff / 86400) + ' days ago';
+        } else {
+            const date = new Date(timestamp * 1000);
+            timeText = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+        
+        element.textContent = timeText;
+    });
+}
+
+// Update times every minute
+setInterval(updateNotificationTimes, 60000);
+
 function showProfilePopup() {
     const popup = document.getElementById('profilePopup');
     popup.style.display = 'flex';
@@ -264,6 +284,10 @@ function closeProfilePopup() {
 function toggleNotifications() {
     const dropdown = document.getElementById('notificationDropdown');
     dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    // Update times when dropdown opens
+    if (dropdown.style.display === 'block') {
+        updateNotificationTimes();
+    }
 }
 
 // Close dropdowns when clicking outside

@@ -61,9 +61,9 @@ document.addEventListener('DOMContentLoaded', function() {
             createPlanBtn.addEventListener('click', showCreatePlanModal);
         }
 
-        // Add Suggestion button
+        // Add Suggestion button - Skip if on suggestions page
         const addSuggestionBtn = Array.from(document.querySelectorAll('button')).find(btn => btn.textContent.includes('Add Suggestion'));
-        if (addSuggestionBtn) {
+        if (addSuggestionBtn && !window.location.pathname.includes('suggestions.php')) {
             addSuggestionBtn.addEventListener('click', showAddSuggestionModal);
         }
 

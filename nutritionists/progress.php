@@ -44,6 +44,111 @@ foreach ($clientProgress as &$client) {
     $client['color'] = $client['progress'] >= 70 ? '#16a34a' : ($client['progress'] >= 40 ? '#f59e0b' : '#dc2626');
 }
 
+// Get recent progress updates from various sources
+$recentUpdates = [];
+
+// Recent weight logs
+$stmt = $db->prepare("SELECT wl.*, u.name as user_name, wl.created_at as activity_time
+    FROM weight_logs wl 
+    JOIN users u ON wl.user_id = u.id 
+    WHERE u.nutritionist_id = ? 
+    ORDER BY wl.created_at DESC LIMIT 5");
+$stmt->execute([$nutritionistId]);
+$weightLogs = $stmt->fetchAll();
+foreach ($weightLogs as $log) {
+    $recentUpdates[] = [
+        'type' => 'weight',
+        'user_name' => $log['user_name'],
+        'title' => $log['user_name'] . ' logged weight update',
+        'subtitle' => 'Weight: ' . $log['weight'] . ' kg' . ($log['notes'] ? ' • ' . $log['notes'] : ''),
+        'status' => 'Weight Update',
+        'status_class' => 'confirmed',
+        'time' => $log['activity_time']
+    ];
+}
+
+// Recent completed appointments
+$stmt = $db->prepare("SELECT a.*, u.name as user_name, a.created_at as activity_time
+    FROM appointments a 
+    JOIN users u ON a.user_id = u.id 
+    WHERE a.nutritionist_id = ? AND a.status = 'completed'
+    ORDER BY a.created_at DESC LIMIT 3");
+$stmt->execute([$nutritionistId]);
+$appointments = $stmt->fetchAll();
+foreach ($appointments as $apt) {
+    $recentUpdates[] = [
+        'type' => 'appointment',
+        'user_name' => $apt['user_name'],
+        'title' => $apt['user_name'] . ' completed session',
+        'subtitle' => 'Session on ' . date('M j', strtotime($apt['appointment_date'])) . ' • ' . $apt['reason'],
+        'status' => 'Session Complete',
+        'status_class' => 'confirmed',
+        'time' => $apt['activity_time']
+    ];
+}
+
+// Recent diet plan completions
+$stmt = $db->prepare("SELECT dp.*, u.name as user_name, dp.created_at as activity_time
+    FROM diet_plans dp 
+    JOIN users u ON dp.user_id = u.id 
+    WHERE dp.nutritionist_id = ? AND dp.status = 'completed'
+    ORDER BY dp.created_at DESC LIMIT 2");
+$stmt->execute([$nutritionistId]);
+$completedPlans = $stmt->fetchAll();
+foreach ($completedPlans as $plan) {
+    $recentUpdates[] = [
+        'type' => 'plan',
+        'user_name' => $plan['user_name'],
+        'title' => $plan['user_name'] . ' completed diet plan',
+        'subtitle' => $plan['name'] . ' • ' . $plan['duration_weeks'] . ' weeks completed',
+        'status' => 'Plan Complete',
+        'status_class' => 'confirmed',
+        'time' => $plan['activity_time']
+    ];
+}
+
+// Recent high activity days (users with 3+ logs in a day)
+$stmt = $db->prepare("SELECT u.name as user_name, 
+    COUNT(DISTINCT ml.id) + COUNT(DISTINCT wl.id) + COUNT(DISTINCT sl.id) as daily_logs,
+    GREATEST(COALESCE(MAX(ml.created_at), '1970-01-01'), COALESCE(MAX(wl.created_at), '1970-01-01'), COALESCE(MAX(sl.created_at), '1970-01-01')) as activity_time
+    FROM users u
+    LEFT JOIN meal_logs ml ON u.id = ml.user_id AND ml.log_date >= DATE_SUB(CURDATE(), INTERVAL 3 DAY)
+    LEFT JOIN water_logs wl ON u.id = wl.user_id AND wl.log_date >= DATE_SUB(CURDATE(), INTERVAL 3 DAY)
+    LEFT JOIN sleep_logs sl ON u.id = sl.user_id AND sl.log_date >= DATE_SUB(CURDATE(), INTERVAL 3 DAY)
+    WHERE u.nutritionist_id = ? AND u.role = 'user'
+    GROUP BY u.id, u.name
+    HAVING daily_logs >= 3
+    ORDER BY activity_time DESC LIMIT 3");
+$stmt->execute([$nutritionistId]);
+$activeUsers = $stmt->fetchAll();
+foreach ($activeUsers as $user) {
+    $recentUpdates[] = [
+        'type' => 'activity',
+        'user_name' => $user['user_name'],
+        'title' => $user['user_name'] . ' high activity day',
+        'subtitle' => $user['daily_logs'] . ' logs completed • Great progress!',
+        'status' => 'Active',
+        'status_class' => 'confirmed',
+        'time' => $user['activity_time']
+    ];
+}
+
+// Sort all updates by time and limit to 4 most recent
+usort($recentUpdates, function($a, $b) {
+    return strtotime($b['time']) - strtotime($a['time']);
+});
+$recentUpdates = array_slice($recentUpdates, 0, 4);
+
+// Helper function to format time ago
+function timeAgo($datetime) {
+    $time = time() - strtotime($datetime);
+    if ($time < 60) return 'Just now';
+    if ($time < 3600) return floor($time/60) . ' minutes ago';
+    if ($time < 86400) return floor($time/3600) . ' hours ago';
+    if ($time < 604800) return floor($time/86400) . ' days ago';
+    return date('M j', strtotime($datetime));
+}
+
 include 'header.php';
 ?>
 
@@ -121,63 +226,27 @@ include 'header.php';
     <div class="card-content">
         <h3 class="card-title">Recent Progress Updates</h3>
         
+        <?php if (empty($recentUpdates)): ?>
+        <p style="text-align: center; color: #6b7280; padding: 2rem;">No recent progress updates.</p>
+        <?php else: ?>
         <div class="admin-activity-list">
+            <?php foreach ($recentUpdates as $update): ?>
             <div class="admin-activity-item">
                 <div class="admin-activity-info">
                     <div class="admin-activity-dot"></div>
                     <div>
-                        <p class="admin-activity-title">John Doe completed Week 8</p>
-                        <p class="admin-activity-subtitle">Lost 2.5 lbs this week • Goal: 75% complete</p>
+                        <p class="admin-activity-title"><?php echo htmlspecialchars($update['title']); ?></p>
+                        <p class="admin-activity-subtitle"><?php echo htmlspecialchars($update['subtitle']); ?></p>
                     </div>
                 </div>
                 <div class="admin-activity-meta">
-                    <span class="status-badge confirmed">On Track</span>
-                    <span class="admin-activity-time">2 hours ago</span>
+                    <span class="status-badge <?php echo $update['status_class']; ?>"><?php echo htmlspecialchars($update['status']); ?></span>
+                    <span class="admin-activity-time"><?php echo timeAgo($update['time']); ?></span>
                 </div>
             </div>
-            
-            <div class="admin-activity-item">
-                <div class="admin-activity-info">
-                    <div class="admin-activity-dot"></div>
-                    <div>
-                        <p class="admin-activity-title">Mike Johnson reached target weight</p>
-                        <p class="admin-activity-subtitle">Maintenance phase started • Goal: 90% complete</p>
-                    </div>
-                </div>
-                <div class="admin-activity-meta">
-                    <span class="status-badge confirmed">Excellent</span>
-                    <span class="admin-activity-time">1 day ago</span>
-                </div>
-            </div>
-            
-            <div class="admin-activity-item">
-                <div class="admin-activity-info">
-                    <div class="admin-activity-dot"></div>
-                    <div>
-                        <p class="admin-activity-title">Sarah Wilson missed check-in</p>
-                        <p class="admin-activity-subtitle">No progress update for 5 days • Goal: 30% complete</p>
-                    </div>
-                </div>
-                <div class="admin-activity-meta">
-                    <span class="status-badge pending">Needs Follow-up</span>
-                    <span class="admin-activity-time">3 days ago</span>
-                </div>
-            </div>
-            
-            <div class="admin-activity-item">
-                <div class="admin-activity-info">
-                    <div class="admin-activity-dot"></div>
-                    <div>
-                        <p class="admin-activity-title">Chris Brown gained muscle mass</p>
-                        <p class="admin-activity-subtitle">Added 3 lbs lean muscle • Goal: 85% complete</p>
-                    </div>
-                </div>
-                <div class="admin-activity-meta">
-                    <span class="status-badge confirmed">Great Progress</span>
-                    <span class="admin-activity-time">1 week ago</span>
-                </div>
-            </div>
+            <?php endforeach; ?>
         </div>
+        <?php endif; ?>
     </div>
 </div>
 

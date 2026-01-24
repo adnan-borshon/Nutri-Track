@@ -113,6 +113,11 @@ include 'header.php';
 
 <script>
 function showAddSuggestionModal() {
+    // Prevent multiple modals
+    if (document.querySelector('.admin-modal')) {
+        return;
+    }
+    
     const modal = document.createElement('div');
     modal.className = 'admin-modal';
     modal.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;';
@@ -121,7 +126,7 @@ function showAddSuggestionModal() {
         <div class="admin-modal-content" style="background: white; padding: 2rem; border-radius: 0.5rem; max-width: 500px; width: 90%;">
             <div class="admin-modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
                 <h3 style="margin: 0; font-size: 1.25rem; font-weight: 600;">Add Meal Suggestion</h3>
-                <button onclick="closeModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">&times;</button>
+                <button class="close-btn" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #6b7280;">&times;</button>
             </div>
             <form id="addSuggestionForm">
                 <div style="margin-bottom: 1rem;">
@@ -157,7 +162,7 @@ function showAddSuggestionModal() {
                     <input type="text" name="tags" placeholder="e.g. High Protein, Quick" style="width: 100%; padding: 0.5rem; border: 1px solid #d1d5db; border-radius: 0.375rem;">
                 </div>
                 <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
-                    <button type="button" onclick="closeModal()" style="padding: 0.5rem 1rem; border: 1px solid #d1d5db; background: white; border-radius: 0.375rem; cursor: pointer;">Cancel</button>
+                    <button type="button" class="cancel-btn" style="padding: 0.5rem 1rem; border: 1px solid #d1d5db; background: white; border-radius: 0.375rem; cursor: pointer;">Cancel</button>
                     <button type="submit" style="padding: 0.5rem 1rem; background: #278b63; color: white; border: none; border-radius: 0.375rem; cursor: pointer;">Add Suggestion</button>
                 </div>
             </form>
@@ -165,6 +170,21 @@ function showAddSuggestionModal() {
     `;
     
     document.body.appendChild(modal);
+    
+    // Add event listeners after modal is added to DOM
+    modal.querySelector('.close-btn').addEventListener('click', function() {
+        modal.remove();
+    });
+    
+    modal.querySelector('.cancel-btn').addEventListener('click', function() {
+        modal.remove();
+    });
+    
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.remove();
+        }
+    });
     
     document.getElementById('addSuggestionForm').addEventListener('submit', function(e) {
         e.preventDefault();
@@ -179,7 +199,7 @@ function showAddSuggestionModal() {
         .then(data => {
             if (data.success) {
                 showNotification(data.message, 'success');
-                closeModal();
+                modal.remove();
                 location.reload();
             } else {
                 showNotification(data.message, 'error');
@@ -211,12 +231,7 @@ function deleteSuggestion(id) {
     });
 }
 
-function closeModal() {
-    const modal = document.querySelector('.admin-modal');
-    if (modal) {
-        modal.remove();
-    }
-}
+
 
 function showNotification(message, type = 'info') {
     const notification = document.createElement('div');

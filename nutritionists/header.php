@@ -1,7 +1,10 @@
 <?php
 require_once '../includes/session.php';
+require_once '../includes/notifications.php';
 checkAuth('nutritionist');
 $user = getCurrentUser();
+$notifications = getNotifications($user['id'], 5);
+$notificationCount = getUnreadNotificationCount($user['id']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -90,6 +93,11 @@ $user = getCurrentUser();
   <path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />
 </svg> Chat
                 </a>
+                <a href="appointments.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'appointments.php' ? 'active' : ''; ?>">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;stroke-width:1.5;color:#278b63;vertical-align:middle;margin-right:8px;">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5a2.25 2.25 0 0 0 2.25-2.25m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5a2.25 2.25 0 0 1 21 9v7.5m-9-6h.008v.008H12v-.008ZM12 15h.008v.008H12V15Zm0 2.25h.008v.008H12v-.008ZM9.75 15h.008v.008H9.75V15Zm0 2.25h.008v.008H9.75v-.008ZM7.5 15h.008v.008H7.5V15Zm0 2.25h.008v.008H7.5v-.008Zm6.75-4.5h.008v.008h-.008v-.008Zm0 2.25h.008v.008h-.008V15Zm0 2.25h.008v.008h-.008v-.008Zm2.25-4.5h.008v.008H16.5v-.008Zm0 2.25h.008v.008H16.5V15Z" />
+</svg> Appointments
+                </a>
                 <a href="settings.php" class="<?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'active' : ''; ?>">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;stroke-width:1.5;color:#278b63;vertical-align:middle;margin-right:8px;">
   <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
@@ -118,12 +126,60 @@ $user = getCurrentUser();
                 <div></div>
                 <div class="header-actions">
                     <div class="user-info">
-                        <button class="btn btn-outline">
+                        <button class="btn btn-outline" onclick="toggleNotifications()" id="notificationBtn">
 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:16px;height:16px;stroke-width:1.5;color:#278b63;">
   <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9A6 6 0 0 0 6 9v.75a8.967 8.967 0 0 1-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 0 1-5.714 0m5.714 0a3 3 0 1 1-5.714 0" />
 </svg>
                         </button>
-                        <div class="notification-dot"></div>
+                        <?php if ($notificationCount > 0): ?>
+                        <div class="notification-dot" style="position: absolute; top: 0; right: 0; width: 8px; height: 8px; background: #dc2626; border-radius: 50%;"></div>
+                        <?php endif; ?>
+                        <div id="notificationDropdown" style="display: none; position: absolute; top: 100%; right: 0; width: 320px; background: white; border-radius: 0.5rem; box-shadow: 0 10px 25px rgba(0,0,0,0.15); z-index: 1000; margin-top: 0.5rem;">
+                            <div style="padding: 1rem; border-bottom: 1px solid #e5e7eb;">
+                                <h4 style="margin: 0; font-size: 0.875rem; font-weight: 600;">Notifications</h4>
+                            </div>
+                            <div style="max-height: 300px; overflow-y: auto;">
+                                <?php if (empty($notifications)): ?>
+                                <div style="padding: 2rem; text-align: center; color: #6b7280;">
+                                    <p style="margin: 0;">No new notifications</p>
+                                </div>
+                                <?php else: ?>
+                                <?php foreach ($notifications as $notif): ?>
+                                <div style="display: block; padding: 0.75rem 1rem; border-bottom: 1px solid #f3f4f6;">
+                                    <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                                        <div style="width: 2rem; height: 2rem; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#278b63" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                        </div>
+                                        <div style="flex: 1; min-width: 0;">
+                                            <p style="margin: 0; font-size: 0.813rem; font-weight: 500; color: #111827;"><?php echo htmlspecialchars($notif['title']); ?></p>
+                                            <p style="margin: 0.25rem 0 0; font-size: 0.75rem; color: #6b7280;"><?php echo htmlspecialchars($notif['message']); ?></p>
+                                            <p style="margin: 0.25rem 0 0; font-size: 0.625rem; color: #9ca3af;" data-timestamp="<?php echo strtotime($notif['created_at']); ?>"><?php 
+                                                $time = strtotime($notif['created_at']);
+                                                $now = time();
+                                                $diff = $now - $time;
+                                                
+                                                if ($diff < 60) {
+                                                    echo 'Just now';
+                                                } elseif ($diff < 3600) {
+                                                    echo floor($diff / 60) . ' minutes ago';
+                                                } elseif ($diff < 86400) {
+                                                    echo floor($diff / 3600) . ' hours ago';
+                                                } elseif ($diff < 604800) {
+                                                    echo floor($diff / 86400) . ' days ago';
+                                                } else {
+                                                    echo date('M j, Y', $time);
+                                                }
+                                            ?></p>
+                                        </div>
+                                        <?php if (!$notif['is_read']): ?>
+                                        <div style="width: 8px; height: 8px; background: #dc2626; border-radius: 50%; flex-shrink: 0;"></div>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                                <?php endforeach; ?>
+                                <?php endif; ?>
+                            </div>
+                        </div>
                     </div>
                     <div class="user-info" onclick="showProfilePopup()" style="cursor: pointer;">
                         <div class="user-avatar"><?php echo getUserInitials($user['name']); ?></div>
@@ -188,7 +244,7 @@ $user = getCurrentUser();
                 </div>
                 <div>
                     <p style="font-size: 0.75rem; color: #6b7280; margin: 0;">Phone Number</p>
-                    <p style="font-size: 0.875rem; font-weight: 500; margin: 0; color: #111827;"><?php echo isset($user['phone']) ? $user['phone'] : '+1 (555) 123-4567'; ?></p>
+                    <p style="font-size: 0.875rem; font-weight: 500; margin: 0; color: #111827;"><?php echo !empty($user['phone']) ? $user['phone'] : 'Not provided'; ?></p>
                 </div>
             </div>
         </div>
@@ -199,3 +255,55 @@ $user = getCurrentUser();
         </div>
     </div>
 </div>
+
+<script>
+function updateNotificationTimes() {
+    const timeElements = document.querySelectorAll('[data-timestamp]');
+    const now = Math.floor(Date.now() / 1000); // Current Unix timestamp
+    
+    timeElements.forEach(element => {
+        const createdTimestamp = parseInt(element.getAttribute('data-timestamp'));
+        const diffSeconds = now - createdTimestamp; // Difference in seconds
+        
+        let timeText;
+        if (diffSeconds < 60) {
+            timeText = 'Just now';
+        } else if (diffSeconds < 3600) {
+            const minutes = Math.floor(diffSeconds / 60);
+            timeText = minutes + (minutes === 1 ? ' minute ago' : ' minutes ago');
+        } else if (diffSeconds < 86400) {
+            const hours = Math.floor(diffSeconds / 3600);
+            timeText = hours + (hours === 1 ? ' hour ago' : ' hours ago');
+        } else if (diffSeconds < 604800) {
+            const days = Math.floor(diffSeconds / 86400);
+            timeText = days + (days === 1 ? ' day ago' : ' days ago');
+        } else {
+            const date = new Date(createdTimestamp * 1000);
+            timeText = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+        
+        element.textContent = timeText;
+    });
+}
+
+// Update times every minute
+setInterval(updateNotificationTimes, 60000);
+
+function toggleNotifications() {
+    const dropdown = document.getElementById('notificationDropdown');
+    dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+    // Update times when dropdown opens
+    if (dropdown.style.display === 'block') {
+        updateNotificationTimes();
+    }
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    const dropdown = document.getElementById('notificationDropdown');
+    const btn = document.getElementById('notificationBtn');
+    if (dropdown && !dropdown.contains(e.target) && !btn.contains(e.target)) {
+        dropdown.style.display = 'none';
+    }
+});
+</script>

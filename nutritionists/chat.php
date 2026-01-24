@@ -65,7 +65,7 @@ include 'header.php';
                         $initials = strtoupper(substr($client['name'], 0, 1) . substr(strstr($client['name'], ' ') ?: '', 1, 1));
                         $isSelected = $client['id'] == $selectedUserId;
                     ?>
-                    <a href="?user=<?= $client['id'] ?>" class="conversation-item <?= $isSelected ? 'active' : '' ?>" style="padding: 0.5rem; border-radius: 0.375rem; cursor: pointer; text-decoration: none; color: inherit; display: block; <?= $isSelected ? 'background: #f0fdf4;' : '' ?>">
+                    <div class="conversation-item <?= $isSelected ? 'active' : '' ?>" data-user-id="<?= $client['id'] ?>" data-user-name="<?= htmlspecialchars($client['name']) ?>" data-user-goal="<?= htmlspecialchars($client['goal'] ?? 'Client') ?>" style="padding: 0.5rem; border-radius: 0.375rem; cursor: pointer; <?= $isSelected ? 'background: #f0fdf4;' : '' ?>" onclick="selectConversation(<?= $client['id'] ?>, '<?= htmlspecialchars($client['name']) ?>', '<?= htmlspecialchars($client['goal'] ?? 'Client') ?>', '<?= $initials ?>')">
                         <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
                             <div class="user-avatar" style="width: 2rem; height: 2rem; background: #278b63; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;"><?= $initials ?></div>
                             <div style="flex: 1; min-width: 0;">
@@ -81,7 +81,7 @@ include 'header.php';
                                 <?php endif; ?>
                             </div>
                         </div>
-                    </a>
+                    </div>
                     <?php endforeach; ?>
                     <?php endif; ?>
                 </div>
@@ -89,28 +89,18 @@ include 'header.php';
         </div>
     
         <div class="card lg:col-span-2" style="display: flex; flex-direction: column; height: 100%; position: relative;">
-            <?php if ($selectedUser): 
-                $selectedInitials = strtoupper(substr($selectedUser['name'], 0, 1) . substr(strstr($selectedUser['name'], ' ') ?: '', 1, 1));
-            ?>
             <div style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; position: relative; z-index: 2; background: white;">
                 <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <div style="width: 2.5rem; height: 2.5rem; background: #278b63; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: bold;"><?= $selectedInitials ?></div>
+                    <?php 
+                    $selectedInitials = $selectedUser ? strtoupper(substr($selectedUser['name'], 0, 1) . substr(strstr($selectedUser['name'], ' ') ?: '', 1, 1)) : '?';
+                    ?>
+                    <div id="currentChatAvatar" style="width: 2.5rem; height: 2.5rem; background: <?= $selectedUser ? '#278b63' : '#9ca3af' ?>; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: bold;"><?= $selectedInitials ?></div>
                     <div>
-                        <h3 style="font-size: 1rem; font-weight: 600; margin: 0 0 0.25rem 0;"><?= htmlspecialchars($selectedUser['name']) ?></h3>
-                        <span style="background: #dcfce7; color: #278b63; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500;"><?= htmlspecialchars($selectedUser['goal'] ?? 'Client') ?></span>
+                        <h3 id="currentChatName" style="font-size: 1rem; font-weight: 600; margin: 0 0 0.25rem 0;"><?= $selectedUser ? htmlspecialchars($selectedUser['name']) : 'Select a conversation' ?></h3>
+                        <span id="currentChatStatus" style="background: <?= $selectedUser ? '#dcfce7' : '#f3f4f6' ?>; color: <?= $selectedUser ? '#278b63' : '#6b7280' ?>; padding: 0.125rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500;"><?= $selectedUser ? htmlspecialchars($selectedUser['goal'] ?? 'Client') : 'No selection' ?></span>
                     </div>
                 </div>
             </div>
-            <?php else: ?>
-            <div style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; flex-shrink: 0; background: white;">
-                <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <div style="width: 2.5rem; height: 2.5rem; background: #9ca3af; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.875rem; font-weight: bold;">?</div>
-                    <div>
-                        <h3 style="font-size: 1rem; font-weight: 600; margin: 0;">Select a conversation</h3>
-                    </div>
-                </div>
-            </div>
-            <?php endif; ?>
             <div style="flex: 1; position: relative; overflow: hidden;">
                 <div id="chatMessages" style="position: absolute; top: 0; left: 0; right: 0; bottom: 100px; overflow-y: auto; padding: 0.75rem; background: #f9fafb; margin: 0.5rem; border-radius: 0.375rem;">
                     <?php if (!$selectedUser): ?>
@@ -139,25 +129,105 @@ include 'header.php';
                     <?php endif; ?>
                 </div>
                 
-                <?php if ($selectedUser): ?>
-                <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 100px; padding: 0.5rem; border-top: 1px solid #e5e7eb; background: white; z-index: 2;">
+                <div id="chatInputContainer" style="position: absolute; bottom: 0; left: 0; right: 0; height: 100px; padding: 0.5rem; border-top: 1px solid #e5e7eb; background: white; z-index: 2; <?= !$selectedUser ? 'display: none;' : '' ?>">
                     <div style="display: flex; flex-direction: column; gap: 0.5rem; height: 100%;">
                         <textarea id="chatInput" placeholder="Type your message..." style="width: 100%; padding: 0.5rem 0.75rem; border: 1px solid #d1d5db; border-radius: 0.5rem; font-size: 0.875rem; outline: none; resize: none; height: 2.5rem; font-family: inherit;"></textarea>
                         <button id="sendBtn" onclick="sendChatMessage()" style="align-self: flex-end; padding: 0.5rem 1rem; background: #278b63; color: white; border: none; border-radius: 0.5rem; font-size: 0.875rem; font-weight: 500; cursor: pointer;">Send</button>
                     </div>
                 </div>
-                <?php else: ?>
-                <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 100px; padding: 0.5rem; background: #f3f4f6; display: flex; align-items: center; justify-content: center;">
+                <div id="noSelectionMessage" style="position: absolute; bottom: 0; left: 0; right: 0; height: 100px; padding: 0.5rem; background: #f3f4f6; display: <?= $selectedUser ? 'none' : 'flex' ?>; align-items: center; justify-content: center;">
                     <p style="color: #6b7280; font-size: 0.875rem;">Select a client to start messaging</p>
                 </div>
-                <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-const selectedUserId = <?= $selectedUserId ?: 'null' ?>;
+let selectedUserId = <?= $selectedUserId ?: 'null' ?>;
+
+function selectConversation(userId, userName, userGoal, userInitials) {
+    // Update active conversation styling
+    document.querySelectorAll('.conversation-item').forEach(item => {
+        item.classList.remove('active');
+        item.style.background = '';
+    });
+    
+    const clickedItem = document.querySelector(`[data-user-id="${userId}"]`);
+    if (clickedItem) {
+        clickedItem.classList.add('active');
+        clickedItem.style.background = '#f0fdf4';
+    }
+    
+    // Update chat header
+    document.getElementById('currentChatAvatar').textContent = userInitials;
+    document.getElementById('currentChatAvatar').style.background = '#278b63';
+    document.getElementById('currentChatName').textContent = userName;
+    document.getElementById('currentChatStatus').textContent = userGoal;
+    document.getElementById('currentChatStatus').style.background = '#dcfce7';
+    document.getElementById('currentChatStatus').style.color = '#278b63';
+    
+    // Show/hide input area
+    document.getElementById('chatInputContainer').style.display = 'block';
+    document.getElementById('noSelectionMessage').style.display = 'none';
+    
+    // Load chat messages
+    selectedUserId = userId;
+    loadChatMessages(userId);
+}
+
+async function loadChatMessages(userId) {
+    console.log('Loading messages for user:', userId); // Debug log
+    try {
+        const response = await fetch(`nutritionist_handler.php?action=get_messages&user_id=${userId}`);
+        const data = await response.json();
+        console.log('Messages response:', data); // Debug log
+        
+        const messagesContainer = document.getElementById('chatMessages');
+        
+        if (data.success && data.data && data.data.messages) {
+            if (data.data.messages.length === 0) {
+                messagesContainer.innerHTML = `
+                    <div style="text-align: center; padding: 2rem; color: #6b7280;">
+                        <p>No messages yet.</p>
+                        <p style="font-size: 0.75rem;">Start the conversation!</p>
+                    </div>
+                `;
+            } else {
+                messagesContainer.innerHTML = data.data.messages.map(msg => {
+                    const isNutritionist = msg.sender_type === 'nutritionist';
+                    return `
+                        <div style="margin-bottom: 0.75rem; display: flex; flex-direction: column; align-items: ${isNutritionist ? 'flex-start' : 'flex-end'};">
+                            <div style="background: ${isNutritionist ? '#278b63' : 'white'}; color: ${isNutritionist ? 'white' : '#374151'}; padding: 0.5rem 0.75rem; border-radius: 0.75rem; border-bottom-${isNutritionist ? 'left' : 'right'}-radius: 0.25rem; max-width: 70%; word-wrap: break-word; font-size: 0.875rem; ${!isNutritionist ? 'border: 1px solid #e5e7eb;' : ''}">${escapeHtml(msg.message)}</div>
+                            <div style="font-size: 0.625rem; color: #6b7280; margin-top: 0.25rem; padding: 0 0.25rem;">${formatTime(msg.created_at)}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        } else {
+            console.error('Failed to load messages:', data.message);
+            messagesContainer.innerHTML = `
+                <div style="text-align: center; padding: 2rem; color: #dc2626;">
+                    <p>Failed to load messages</p>
+                </div>
+            `;
+        }
+    } catch (error) {
+        console.error('Error loading messages:', error);
+        const messagesContainer = document.getElementById('chatMessages');
+        messagesContainer.innerHTML = `
+            <div style="text-align: center; padding: 2rem; color: #dc2626;">
+                <p>Error loading messages</p>
+            </div>
+        `;
+    }
+}
+
+function formatTime(timestamp) {
+    const date = new Date(timestamp);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+}
 
 async function sendChatMessage() {
     if (!selectedUserId) {

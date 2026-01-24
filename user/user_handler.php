@@ -779,8 +779,13 @@ function handleBookAppointment($userId) {
             sendResponse(false, 'This time slot is already booked');
         }
         
-        $stmt = $db->prepare("INSERT INTO appointments (user_id, nutritionist_id, appointment_date, appointment_time, notes, status) VALUES (?, ?, ?, ?, ?, 'scheduled')");
+        $stmt = $db->prepare("INSERT INTO appointments (user_id, nutritionist_id, appointment_date, appointment_time, reason, status) VALUES (?, ?, ?, ?, ?, 'pending')");
         $stmt->execute([$userId, $nutritionistId, $date, $time, $reason]);
+        
+        // Create notification for nutritionist
+        require_once '../includes/notifications.php';
+        createNotification($nutritionistId, 'appointment_request', 'New Appointment Request', 
+            "New appointment request from user for {$date} at {$time}");
         
         sendResponse(true, 'Appointment booked with ' . $nutritionist['name']);
     } catch (PDOException $e) {

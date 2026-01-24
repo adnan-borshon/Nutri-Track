@@ -21,8 +21,8 @@ $allAppointments = $stmt->fetchAll();
 
 // Separate upcoming and past
 $today = date('Y-m-d');
-$upcoming = array_filter($allAppointments, fn($a) => $a['appointment_date'] >= $today && $a['status'] !== 'completed' && $a['status'] !== 'cancelled');
-$past = array_filter($allAppointments, fn($a) => $a['appointment_date'] < $today || $a['status'] === 'completed');
+$upcoming = array_filter($allAppointments, fn($a) => $a['appointment_date'] >= $today && in_array($a['status'], ['confirmed', 'pending']));
+$past = array_filter($allAppointments, fn($a) => $a['appointment_date'] < $today || in_array($a['status'], ['completed', 'cancelled']));
 
 // Get appointments for calendar (current month)
 $currentMonth = date('Y-m');
@@ -75,7 +75,7 @@ include 'header.php';
                                         </div>
                                     </div>
                                     <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                        <span class="recipe-category" style="background: <?php echo $appointment['status'] === 'scheduled' ? '#dcfce7' : '#f3f4f6'; ?>; color: <?php echo $appointment['status'] === 'scheduled' ? '#16a34a' : '#6b7280'; ?>; text-transform: capitalize;">
+                                        <span class="recipe-category" style="background: <?php echo $appointment['status'] === 'confirmed' ? '#dcfce7' : '#f3f4f6'; ?>; color: <?php echo $appointment['status'] === 'confirmed' ? '#16a34a' : '#6b7280'; ?>; text-transform: capitalize;">
                                             <?php echo $appointment['status']; ?>
                                         </span>
                                         <button class="btn btn-outline" onclick="cancelAppointment(<?php echo $appointment['id']; ?>)" style="color:#ef4444;border-color:#ef4444;padding:0.25rem 0.5rem;font-size:0.75rem;">Cancel</button>
@@ -157,9 +157,17 @@ include 'header.php';
 </div>
 
 <script>
+const nutritionists = <?php echo json_encode($nutritionists); ?>;
+
 document.getElementById('bookAppointmentBtn').addEventListener('click', function() {
     const modal = document.createElement('div');
     modal.className = 'modal-overlay';
+    
+    let nutritionistOptions = '<option value="">Select Nutritionist</option>';
+    nutritionists.forEach(n => {
+        nutritionistOptions += `<option value="${n.id}">${n.name}${n.specialty ? ' - ' + n.specialty : ''}</option>`;
+    });
+    
     modal.innerHTML = `
         <div class="modal-content">
             <div class="modal-header">
@@ -171,10 +179,7 @@ document.getElementById('bookAppointmentBtn').addEventListener('click', function
                     <div class="form-group">
                         <label class="form-label">Nutritionist</label>
                         <select class="form-input" name="nutritionist_id" id="nutritionistSelect" required>
-                            <option value="">Select Nutritionist</option>
-                            <?php foreach ($nutritionists as $n): ?>
-                            <option value="<?php echo $n['id']; ?>"><?php echo htmlspecialchars($n['name']); ?><?php echo $n['specialty'] ? ' - ' . htmlspecialchars($n['specialty']) : ''; ?></option>
-                            <?php endforeach; ?>
+                            ${nutritionistOptions}
                         </select>
                     </div>
                     <div class="form-row">

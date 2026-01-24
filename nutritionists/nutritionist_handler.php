@@ -39,6 +39,9 @@ switch ($action) {
     case 'get_assigned_users':
         handleGetAssignedUsers($nutritionistId);
         break;
+    case 'get_messages':
+        handleGetMessages($nutritionistId);
+        break;
     case 'send_message':
         handleSendMessage($nutritionistId);
         break;
@@ -59,6 +62,9 @@ switch ($action) {
         break;
     case 'get_dashboard_stats':
         handleGetDashboardStats($nutritionistId);
+        break;
+    case 'update_appointment_status':
+        handleUpdateAppointmentStatus($nutritionistId);
         break;
     default:
         sendResponse(false, 'Invalid action specified');
@@ -255,6 +261,43 @@ function handleGetUserDetails($nutritionistId) {
 // =============================================
 // CHAT FUNCTIONS
 // =============================================
+
+function handleGetMessages($nutritionistId) {
+    $userId = intval($_GET['user_id'] ?? $_POST['user_id'] ?? 0);
+    
+    if ($userId <= 0) {
+        sendResponse(false, 'Invalid user ID');
+    }
+    
+    try {
+        $db = getDB();
+        
+        // Verify user is assigned to this nutritionist
+        $stmt = $db->prepare("SELECT id FROM users WHERE id = ? AND nutritionist_id = ?");
+        $stmt->execute([$userId, $nutritionistId]);
+        if (!$stmt->fetch()) {
+            sendResponse(false, 'User is not assigned to you');
+        }
+        
+        $stmt = $db->prepare("SELECT m.*, 
+                              CASE WHEN m.sender_id = ? THEN 'nutritionist' ELSE 'user' END as sender_type
+                              FROM messages m 
+                              WHERE (m.sender_id = ? AND m.receiver_id = ?) 
+                                 OR (m.sender_id = ? AND m.receiver_id = ?)
+                              ORDER BY m.created_at ASC");
+        $stmt->execute([$nutritionistId, $nutritionistId, $userId, $userId, $nutritionistId]);
+        $messages = $stmt->fetchAll();
+        
+        // Mark messages as read
+        $stmt = $db->prepare("UPDATE messages SET is_read = 1 WHERE sender_id = ? AND receiver_id = ?");
+        $stmt->execute([$userId, $nutritionistId]);
+        
+        sendResponse(true, 'Messages retrieved', ['messages' => $messages]);
+    } catch (PDOException $e) {
+        error_log("Get messages error: " . $e->getMessage());
+        sendResponse(false, 'Database error occurred');
+    }
+}
 
 function handleSendMessage($nutritionistId) {
     $userId = intval($_POST['user_id'] ?? $_POST['userId'] ?? 0);
@@ -460,6 +503,66 @@ function handleGetDashboardStats($nutritionistId) {
         sendResponse(true, 'Dashboard stats retrieved', $stats);
     } catch (PDOException $e) {
         error_log("Get dashboard stats error: " . $e->getMessage());
+        sendResponse(false, 'Database error occurred');
+    }
+}
+
+// =============================================
+// APPOINTMENT FUNCTIONS
+// =============================================
+
+function handleUpdateAppointmentStatus($nutritionistId) {
+    $appointmentId = intval($_POST['appointment_id'] ?? 0);
+    $status = sanitize($_POST['status'] ?? '');
+    
+    if ($appointmentId <= 0 || empty($status)) {
+        sendResponse(false, 'Invalid appointment data');
+    }
+    
+    $validStatuses = ['confirmed', 'completed', 'cancelled', 'pending'];
+    if (!in_array($status, $validStatuses)) {
+        sendResponse(false, 'Invalid status');
+    }
+    
+    try {
+        $db = getDB();
+        
+        // Verify appointment belongs to this nutritionist
+        $stmt = $db->prepare("SELECT id FROM appointments WHERE id = ? AND nutritionist_id = ?");
+        $stmt->execute([$appointmentId, $nutritionistId]);
+        if (!$stmt->fetch()) {
+            sendResponse(false, 'Appointment not found');
+        }
+        
+        $stmt = $db->prepare("UPDATE appointments SET status = ? WHERE id = ?");
+        $stmt->execute([$status, $appointmentId]);
+        
+        // Create notification for user
+        require_once '../includes/notifications.php';
+        $stmt = $db->prepare("SELECT user_id FROM appointments WHERE id = ?");
+        $stmt->execute([$appointmentId]);
+        $appointment = $stmt->fetch();
+        
+        if ($appointment) {
+            $messages = [
+                'confirmed' => 'Your appointment request has been accepted',
+                'completed' => 'Your appointment has been completed',
+                'cancelled' => 'Your appointment has been cancelled'
+            ];
+            if (isset($messages[$status])) {
+                createNotification($appointment['user_id'], 'appointment_update', 'Appointment Update', $messages[$status]);
+            }
+        }
+        
+        $statusMessages = [
+            'confirmed' => 'Appointment request accepted',
+            'completed' => 'Appointment marked as completed',
+            'cancelled' => 'Appointment cancelled'
+        ];
+        $statusMessage = $statusMessages[$status] ?? 'Appointment status updated';
+        sendResponse(true, $statusMessage);
+    } catch (PDOException $e) {
+        error_log("Update appointment status error: " . $e->getMessage());
         sendResponse(false, 'Database error occurred');
     }
 }
